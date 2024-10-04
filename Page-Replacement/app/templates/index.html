@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMU Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .ram-bar {
+            display: flex;
+            height: 30px;
+            margin-bottom: 10px;
+            border: 1px solid #000;
+        }
+        .ram-bar div {
+            height: 100%;
+        }
+        .mmu-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 48%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #ddd;
+        }
+        .mmu-info {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="ram-bar" id="ram-bar-1">
+        <!-- Simulated RAM blocks will be inserted here -->
+    </div>
+    <div class="ram-bar" id="ram-bar-2">
+        <!-- Simulated RAM blocks will be inserted here -->
+    </div>
+
+    <div class="mmu-container">
+        <table id="mmu-1">
+            <thead>
+                <tr>
+                    <th>PAGE_ID</th>
+                    <th>PID</th>
+                    <th>LOADED</th>
+                    <th>L-ADDR</th>
+                    <th>M-ADDR</th>
+                    <th>D-ADDR</th>
+                    <th>LOADED-T</th>
+                    <th>MARK</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- MMU 1 data will be inserted here -->
+            </tbody>
+        </table>
+        <table id="mmu-2">
+            <thead>
+                <tr>
+                    <th>PAGE_ID</th>
+                    <th>PID</th>
+                    <th>LOADED</th>
+                    <th>L-ADDR</th>
+                    <th>M-ADDR</th>
+                    <th>D-ADDR</th>
+                    <th>LOADED-T</th>
+                    <th>MARK</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- MMU 2 data will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mmu-info" id="mmu-info-1">
+        <h3>MMU 1 Information</h3>
+        <p>Processes: <span id="mmu1-processes">0</span></p>
+        <p>Simulation Time: <span id="mmu1-simulation-time">0</span> seconds</p>
+        <p>RAM Used: <span id="mmu1-ram-used">0</span> KB (<span id="mmu1-ram-percent">0</span>%)</p>
+        <p>V-RAM Used: <span id="mmu1-vram-used">0</span> KB (<span id="mmu1-vram-percent">0</span>%)</p>
+        <p>Pages Loaded: <span id="mmu1-pages-loaded">0</span></p>
+        <p>Pages Unloaded: <span id="mmu1-pages-unloaded">0</span></p>
+        <p>Trashing: <span id="mmu1-trashing">0</span></p>
+        <p>Fragmentation: <span id="mmu1-fragmentation">0</span></p>
+    </div>
+
+    <div class="mmu-info" id="mmu-info-2">
+        <h3>MMU 2 Information</h3>
+        <p>Processes: <span id="mmu2-processes">0</span></p>
+        <p>Simulation Time: <span id="mmu2-simulation-time">0</span> seconds</p>
+        <p>RAM Used: <span id="mmu2-ram-used">0</span> KB (<span id="mmu2-ram-percent">0</span>%)</p>
+        <p>V-RAM Used: <span id="mmu2-vram-used">0</span> KB (<span id="mmu2-vram-percent">0</span>%)</p>
+        <p>Pages Loaded: <span id="mmu2-pages-loaded">0</span></p>
+        <p>Pages Unloaded: <span id="mmu2-pages-unloaded">0</span></p>
+        <p>Trashing: <span id="mmu2-trashing">0</span></p>
+        <p>Fragmentation: <span id="mmu2-fragmentation">0</span></p>
+    </div>
+
+    <script>
+        // Example function to simulate RAM usage
+        function simulateRamUsage(ramBarId, blocks) {
+            const ramBar = document.getElementById(ramBarId);
+            ramBar.innerHTML = '';
+            blocks.forEach(block => {
+                const div = document.createElement('div');
+                div.style.width = block.width;
+                div.style.backgroundColor = block.color;
+                ramBar.appendChild(div);
+            });
+        }
+
+        // Example data for RAM bars
+        const ramBlocks1 = [
+            { width: '10px', color: 'red' },
+            { width: '10px', color: 'blue' },
+            { width: '10px', color: 'green' }
+        ];
+        const ramBlocks2 = [
+            { width: '40%', color: 'yellow' },
+            { width: '60%', color: 'purple' }
+        ];
+
+        simulateRamUsage('ram-bar-1', ramBlocks1);
+        simulateRamUsage('ram-bar-2', ramBlocks2);
+
+        // Example function to update MMU tables
+        function updateMmuTable(mmuId, data) {
+            const tbody = document.getElementById(mmuId).querySelector('tbody');
+            tbody.innerHTML = '';
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                Object.values(row).forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Example data for MMU tables
+        const mmuData1 = [
+            { PAGE_ID: 1, PID: 101, LOADED: 'Yes', 'L-ADDR': '0x001', 'M-ADDR': '0x100', 'D-ADDR': '0x200', 'LOADED-T': '10s', MARK: 'A' },
+            { PAGE_ID: 2, PID: 102, LOADED: 'No', 'L-ADDR': '0x002', 'M-ADDR': '0x101', 'D-ADDR': '0x201', 'LOADED-T': '20s', MARK: 'B' }
+        ];
+        const mmuData2 = [
+            { PAGE_ID: 3, PID: 103, LOADED: 'Yes', 'L-ADDR': '0x003', 'M-ADDR': '0x102', 'D-ADDR': '0x202', 'LOADED-T': '30s', MARK: 'C' },
+            { PAGE_ID: 4, PID: 104, LOADED: 'No', 'L-ADDR': '0x004', 'M-ADDR': '0x103', 'D-ADDR': '0x203', 'LOADED-T': '40s', MARK: 'D' }
+        ];
+
+        updateMmuTable('mmu-1', mmuData1);
+        updateMmuTable('mmu-2', mmuData2);
+
+        // Example function to update MMU info
+        function updateMmuInfo(mmuInfoId, info) {
+            document.getElementById(`${mmuInfoId}-processes`).textContent = info.processes;
+            document.getElementById(`${mmuInfoId}-simulation-time`).textContent = info.simulationTime;
+            document.getElementById(`${mmuInfoId}-ram-used`).textContent = info.ramUsed;
+            document.getElementById(`${mmuInfoId}-ram-percent`).textContent = info.ramPercent;
+            document.getElementById(`${mmuInfoId}-vram-used`).textContent = info.vramUsed;
+            document.getElementById(`${mmuInfoId}-vram-percent`).textContent = info.vramPercent;
+            document.getElementById(`${mmuInfoId}-pages-loaded`).textContent = info.pagesLoaded;
+            document.getElementById(`${mmuInfoId}-pages-unloaded`).textContent = info.pagesUnloaded;
+            document.getElementById(`${mmuInfoId}-trashing`).textContent = info.trashing;
+            document.getElementById(`${mmuInfoId}-fragmentation`).textContent = info.fragmentation;
+        }
+
+        // Example data for MMU info
+        const mmuInfo1 = {
+            processes: 5,
+            simulationTime: 120,
+            ramUsed: 1024,
+            ramPercent: 50,
+            vramUsed: 2048,
+            vramPercent: 75,
+            pagesLoaded: 10,
+            pagesUnloaded: 5,
+            trashing: 2,
+            fragmentation: 3
+        };
+        const mmuInfo2 = {
+            processes: 3,
+            simulationTime: 90,
+            ramUsed: 512,
+            ramPercent: 25,
+            vramUsed: 1024,
+            vramPercent: 50,
+            pagesLoaded: 8,
+            pagesUnloaded: 2,
+            trashing: 1,
+            fragmentation: 1
+        };
+
+        updateMmuInfo('mmu1', mmuInfo1);
+        updateMmuInfo('mmu2', mmuInfo2);
+    </script>
+</body>
+</html>
