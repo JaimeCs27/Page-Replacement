@@ -1,4 +1,4 @@
-from page import Page
+from .page import Page
 
 class Symbol:
     def __init__(self, ptr):
