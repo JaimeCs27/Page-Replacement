@@ -144,7 +144,6 @@ class MMU:
     def popQueue(self, pid):
         index = self.fifo.pop(0)
         self.fifo.append(index)
-        print("index popeado: " + str(index))
         newPage = Page(pid, self.pageIDs, index, False, False)
         oldPage = self.ram[index]
         oldPage.isVirtual = True
