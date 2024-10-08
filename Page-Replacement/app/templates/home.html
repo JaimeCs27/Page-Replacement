@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Replacement</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        function checkFileUpload() {
+            const fileInput = document.getElementById('file');
+            const seedInput = document.getElementById('seed');
+            const processesInput = document.getElementById('processes');
+            const operationsInput = document.getElementById('operations');
+
+            if (fileInput.files.length > 0) {
+                seedInput.parentElement.style.display = 'none';
+                processesInput.parentElement.style.display = 'none';
+                operationsInput.parentElement.style.display = 'none';
+            } else {
+                seedInput.parentElement.style.display = 'block';
+                processesInput.parentElement.style.display = 'block';
+                operationsInput.parentElement.style.display = 'block';
+            }
+        }
+
+        async function generateFile() {
+            const seed = document.getElementById('seed').value;
+            const processes = document.getElementById('processes').value;
+            const operations = document.getElementById('operations').value;
+
+            const response = await fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ seed, processes, operations })
+            });
+
+            const data = await response.json();
+            const downloadButton = document.getElementById('downloadButton');
+            downloadButton.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(data["data"]);
+            downloadButton.download = 'generated_file.json';
+            downloadButton.style.display = 'block';
+        }
+    </script>
+</head>
+<body>
+    <h1>Page Replacement</h1>
+    <form action="/simulation" method="post" enctype="multipart/form-data">
+        <label for="file">Upload File:</label>
+        <input type="file" id="file" name="file" onchange="checkFileUpload()"><br><br>
+
+        <label for="seed">Seed:</label>
+        <input type="text" id="seed" name="seed"><br><br>
+
+        <label for="processes">Quantity of Processes:</label>
+        <input type="number" id="processes" name="processes"><br><br>
+        
+        <label for="operations">Quantity of Operations:</label>
+        <input type="number" id="operations" name="operations"><br><br>
+
+        <label for="algorithm">Algorithm:</label>
+        <select id="algorithm" name="algorithm" required>
+            <option value="FIFO">FIFO</option>
+            <option value="SC">SC</option>
+            <option value="MRU">MRU</option>
+            <option value="RND">RND</option>
+        </select><br><br>
+        
+        <input type="submit" value="Submit">
+    </form>
+
+    <button type="button" onclick="generateFile()">Generar</button>
+    <a id="downloadButton" style="display:none;">Download</a>
+</body>
+</html>

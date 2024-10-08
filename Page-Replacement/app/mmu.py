@@ -1,7 +1,9 @@
 # Clase MMU
 from .page import Page
+import random
 PAGE_SIZE = 4000
-RAM_SIZE = 3
+RAM_SIZE = 4
+
 
 class MMU:
     # Method (algoritmo que se va a usar)
@@ -20,10 +22,11 @@ class MMU:
         if self.method == "FIFO":
             self.fifo = []
         elif self.method == "SC":
-            pass
+            self.fifo = []
         elif self.method == "MRU":
-            pass
+            self.recentlyUsed = []
         elif self.method == "RND":
+            #random.seed(3)
             pass
         else:
             pass
@@ -35,17 +38,19 @@ class MMU:
         auxSize = size - 4000 * (pagesNeeded - 1) # Calcular la fragmentacion 
         self.fragmentation += 4000 - auxSize # Calcular la fragmentacion 
         pagesList = [] # Almacena las las listas creadas
+        recentlyAdded = []
         for i in range(pagesNeeded):
             page = None
             if self.ramOcupation == RAM_SIZE: # ya no hay espacio en memoria fisica
                 if self.method == "FIFO":
                     page = self.popQueue(pid)
                 elif self.method == "SC":
-                    pass
+                    page = self.secondChance(pid)
                 elif self.method == "MRU":
-                    pass
+                    page = self.MRU(pid)
+                    recentlyAdded.append(page.direction)
                 elif self.method == "RND":
-                    pass
+                    page = self.random(pid)
                 else:
                     pass
                 self.clock += 5
@@ -58,9 +63,9 @@ class MMU:
                 if self.method == "FIFO":
                     self.fifo.append(availableIndex)
                 elif self.method == "SC":
-                    pass
+                    self.fifo.append(availableIndex)
                 elif self.method == "MRU":
-                    pass
+                    self.recentlyUsed.append(availableIndex)
                 elif self.method == "RND":
                     pass
                 else:
@@ -68,6 +73,8 @@ class MMU:
             pagesList.append(page)
             self.pages.append(page)
             self.pageIDs += 1
+        if self.method == "MRU":
+            self.recentlyUsed.extend(recentlyAdded)
         self.symbolTable[self.ptrCounter] = pagesList
         self.ptrCounter += 1
         return self.ptrCounter - 1
@@ -76,23 +83,32 @@ class MMU:
     def use(self, ptr):
         # sacar la lista de paginas del ptr
         pages = self.symbolTable[ptr]
+        recentlyAdded = []
         for page in pages:
-            # estan en memoria fisica?
+            # estan en memoria virtual?
             if page.isVirtual:
                 if self.method == "FIFO":
                     self.applyFifo(page)
                 elif self.method == "SC":
-                    pass
+                    print("SC")
+                    self.secondChanceUse(page)
                 elif self.method == "MRU":
-                    pass
+                    recentlyAdded.append(self.MRU_Use(page))
                 elif self.method == "RND":
-                    pass
+                    self.randomUse(page, pages)
                 else:
                     pass
                 self.clock += 5
                 pass
             else:
+                if self.method == "MRU":
+                    self.recentlyUsed.remove(page.direction)
+                    recentlyAdded.append(page.direction)
+                if self.method == "SC":
+                    page.isMarked = True
                 self.clock += 1
+        if self.method == "MRU":
+            self.recentlyUsed.extend(recentlyAdded)
 
     def kill(self, pid):
         # Encontrar todos los punteros asociados al pid
@@ -105,16 +121,16 @@ class MMU:
     def delete(self, ptr):
         # obtener las paginas asociadas a ese ptr
         pages = self.symbolTable[ptr]
-        
+       
         # eliminar de la ram las paginas asociadas
         for page in pages:
             if not page.isVirtual:
                 if self.method == "FIFO":
                     self.fifo.remove(page.direction)
                 elif self.method == "SC":
-                    pass
+                    self.fifo.remove(page.direction)
                 elif self.method == "MRU":
-                    pass
+                    self.recentlyUsed.remove(page.direction)
                 elif self.method == "RND":
                     pass
                 else:
@@ -131,6 +147,26 @@ class MMU:
         # eliminar de la tabla de simbolos ptr
         del self.symbolTable[ptr]
 
+
+    ## RANDOM FUNCTIONS
+    def random(self, pid):
+        oldPage = random.choice(self.ram)
+        index = oldPage.direction
+        oldPage.isVirtual = True
+        oldPage.direction = None
+        newPage = Page(pid, self.pageIDs, index, False, False)
+        self.ram[index] = newPage
+
+    def randomUse(self, newPage, pages):
+        oldPage = random.choice(self.ram)
+        while oldPage in pages:
+            oldPage = random.choice(self.ram)
+        index = oldPage.direction
+        oldPage.isVirtual = True
+        oldPage.direction = None
+        self.ram[index] = newPage
+
+    ## FIFO FUNCTIONS
     def applyFifo(self, newPage):
         index = self.fifo.pop(0)
         self.fifo.append(index)
@@ -140,7 +176,7 @@ class MMU:
         oldPage.isVirtual = True
         oldPage.direction = None
         self.ram[index] = newPage
-
+        
     def popQueue(self, pid):
         index = self.fifo.pop(0)
         self.fifo.append(index)
@@ -150,6 +186,71 @@ class MMU:
         oldPage.direction = None
         self.ram[index] = newPage
         return newPage
+
+    ## SC FUNCTIONS
+    def secondChance(self, pid):
+        i = 0
+        index = self.fifo[i]
+        oldPage = self.ram[index]
+        while oldPage.isMarked:
+            oldPage.isMarked = False
+            if i == RAM_SIZE - 1:
+                i = 0
+            else:
+                i += 1
+            index = self.fifo[i]
+            oldPage = self.ram[index]
+            
+        self.fifo.pop(i)
+        self.fifo.append(index)
+        newPage = Page(pid, self.pageIDs, index, False, False)
+        oldPage.isVirtual = True
+        oldPage.direction = None
+        self.ram[index] = newPage
+        return newPage
+
+    def secondChanceUse(self, newPage):
+        i = 0
+        index = self.fifo[i]
+        oldPage = self.ram[index]
+        while oldPage.isMarked:
+            oldPage.isMarked = False
+            if i == RAM_SIZE - 1:
+                i = 0
+            else:
+                i += 1
+            index = self.fifo[i]
+            oldPage = self.ram[index]
+        self.fifo.pop(i)
+        self.fifo.append(index)
+        newPage.isVirtual = False
+        newPage.isMarked = False
+        newPage.direction = index
+        oldPage.isVirtual = True
+        oldPage.direction = None
+        oldPage.isMarked = False
+        self.ram[index] = newPage
+
+    ## MRU FUNCTIONS
+    def MRU(self, pid):
+        index = self.recentlyUsed.pop()
+        newPage = Page(pid, self.pageIDs, index, False, False)
+        oldPage = self.ram[index]
+        oldPage.isVirtual = True
+        oldPage.direction = None
+        self.ram[index] = newPage
+        return newPage
+    
+    def MRU_Use(self, newPage):
+        index = self.recentlyUsed.pop()
+        oldPage = self.ram[index]
+        oldPage.isVirtual = True
+        oldPage.direction = None
+        newPage.isVirtual = False
+        newPage.direction = index
+        self.ram[index] = newPage
+        return index
+
 
     def printRam(self):
         for page in self.ram:
