@@ -30,13 +30,11 @@ def generateFile(seed, processAmount, operationsAmount):
                 data[pid] = []
             data[pid].append(ptrCounter)
             ptrCounter += 1
-            lastUsedInstruction = "new"
             operationsCounter += 1
         elif instruction > 15:
             if len(ptrList) > 0:
                 ptr = random.choice(ptrList)
                 result += "use(" + str(ptr) + ")\n"
-                lastUsedInstruction = "use"
                 operationsCounter += 1
         elif instruction > 3:
             if len(ptrList) > 0:
@@ -54,7 +52,6 @@ def generateFile(seed, processAmount, operationsAmount):
                     ptrList.remove(e)
                 del data[pid]
                 result += "kill(" + str(pid) + ")\n"
-                lastUsedInstruction = "kill"
                 killedPid.append(pid)
                 pidList.remove(pid)
                 operationsCounter += 1
