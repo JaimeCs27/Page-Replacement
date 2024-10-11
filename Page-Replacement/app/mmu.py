@@ -2,7 +2,7 @@
 from .page import Page
 import random
 PAGE_SIZE = 4000
-RAM_SIZE = 4
+RAM_SIZE = 100
 
 
 class MMU:
@@ -26,7 +26,7 @@ class MMU:
         elif self.method == "MRU":
             self.recentlyUsed = []
         elif self.method == "RND":
-            #random.seed(3)
+            random.seed(3)
             pass
         else:
             pass
@@ -90,7 +90,6 @@ class MMU:
                 if self.method == "FIFO":
                     self.applyFifo(page)
                 elif self.method == "SC":
-                    print("SC")
                     self.secondChanceUse(page)
                 elif self.method == "MRU":
                     recentlyAdded.append(self.MRU_Use(page))
@@ -156,14 +155,17 @@ class MMU:
         oldPage.direction = None
         newPage = Page(pid, self.pageIDs, index, False, False)
         self.ram[index] = newPage
+        return newPage
 
     def randomUse(self, newPage, pages):
         oldPage = random.choice(self.ram)
-        while oldPage in pages:
+        while oldPage in pages or oldPage == None:
             oldPage = random.choice(self.ram)
         index = oldPage.direction
         oldPage.isVirtual = True
         oldPage.direction = None
+        newPage.isVirtual = False
+        newPage.direction = index
         self.ram[index] = newPage
 
     ## FIFO FUNCTIONS

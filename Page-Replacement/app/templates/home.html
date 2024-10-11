@@ -6,6 +6,8 @@
     <title>Page Replacement</title>
     <link rel="stylesheet" href="styles.css">
     <script>
+        let generatedFileData = '';
+
         function checkFileUpload() {
             const fileInput = document.getElementById('file');
             const seedInput = document.getElementById('seed');
@@ -16,6 +18,8 @@
                 seedInput.parentElement.style.display = 'none';
                 processesInput.parentElement.style.display = 'none';
                 operationsInput.parentElement.style.display = 'none';
+                // Limpiar el archivo generado
+                document.getElementById('generatedFile').value = '';
             } else {
                 seedInput.parentElement.style.display = 'block';
                 processesInput.parentElement.style.display = 'block';
@@ -37,16 +41,32 @@
             });
 
             const data = await response.json();
+            generatedFileData = data["data"]; // Guardar el archivo generado
             const downloadButton = document.getElementById('downloadButton');
-            downloadButton.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(data["data"]);
-            downloadButton.download = 'generated_file.json';
+            downloadButton.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(generatedFileData);
+            downloadButton.download = 'generated_file.txt';
             downloadButton.style.display = 'block';
+
+            // Almacenar el archivo generado en el input hidden
+            document.getElementById('generatedFile').value = generatedFileData;
+        }
+
+        function handleSubmit(event) {
+            const fileInput = document.getElementById('file');
+            const generatedFile = document.getElementById('generatedFile').value;
+
+            // Si no se subió archivo, usamos el generado
+            if (fileInput.files.length === 0 && generatedFile === '') {
+                event.preventDefault();
+                alert('Por favor, sube un archivo o genera uno.');
+            }
         }
     </script>
 </head>
 <body>
     <h1>Page Replacement</h1>
-    <form action="/simulation" method="post" enctype="multipart/form-data">
+    
+    <form action="/simulation" method="post" enctype="multipart/form-data" onsubmit="handleSubmit(event)">
         <label for="file">Upload File:</label>
         <input type="file" id="file" name="file" onchange="checkFileUpload()"><br><br>
 
@@ -67,10 +87,13 @@
             <option value="RND">RND</option>
         </select><br><br>
         
-        <input type="submit" value="Submit">
+        <button type="button" onclick="generateFile()">Generar</button>
+        <a id="downloadButton" style="display:none;">Download</a>
+        
+        <!-- Campo oculto para almacenar el archivo generado -->
+        <input type="hidden" id="generatedFile" name="generatedFile">
+        
+        <input type="submit" value="Start Simulation">
     </form>
-
-    <button type="button" onclick="generateFile()">Generar</button>
-    <a id="downloadButton" style="display:none;">Download</a>
 </body>
 </html>

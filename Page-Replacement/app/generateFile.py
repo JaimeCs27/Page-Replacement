@@ -6,8 +6,6 @@ def generateFile(seed, processAmount, operationsAmount):
     result = ""
     random.seed(seed)
     operationsCounter = 0
-    instructions = ["new", "use", "delete", "kill"]
-    lastUsedInstruction = ""
     killedPid = []
     data = {}
     ptrCounter = 1
@@ -15,12 +13,11 @@ def generateFile(seed, processAmount, operationsAmount):
     pidList = []
     z = 0
     while operationsCounter < operationsAmount:
-        instruction = random.choice(instructions)
-        if instruction == "new":
-            size = random.randrange(0, 10000)
+        instruction = random.randrange(0,100)
+        if instruction > 58:
+            size = random.randrange(0, 12000)
             pid = random.randrange(processAmount)
             while pid in killedPid:
-                #print(len(killedPid))
                 if len(killedPid) == processAmount:
                     operationsCounter = operationsAmount
                     break
@@ -35,13 +32,13 @@ def generateFile(seed, processAmount, operationsAmount):
             ptrCounter += 1
             lastUsedInstruction = "new"
             operationsCounter += 1
-        elif instruction == "use":
+        elif instruction > 15:
             if len(ptrList) > 0:
                 ptr = random.choice(ptrList)
                 result += "use(" + str(ptr) + ")\n"
                 lastUsedInstruction = "use"
                 operationsCounter += 1
-        elif instruction == "delete":
+        elif instruction > 3:
             if len(ptrList) > 0:
                 ptr = random.choice(ptrList)
                 result += "delete(" + str(ptr) + ")\n"
@@ -49,7 +46,6 @@ def generateFile(seed, processAmount, operationsAmount):
                 for key in data:
                     if ptr in data[key]:
                         data[key].remove(ptr)
-                lastUsedInstruction = "delete"
                 operationsCounter += 1
         else:
             if len(pidList) > 0:
@@ -63,5 +59,3 @@ def generateFile(seed, processAmount, operationsAmount):
                 pidList.remove(pid)
                 operationsCounter += 1
     return result
-
-print(generateFile(time.time(), 50000, 50000))

@@ -114,30 +114,48 @@
 
     <script>
         // Example function to simulate RAM usage
+        let currentIndex = 0; // Índice del bloque actual que se está cargando
+
+        // Función para simular el uso de RAM
         function simulateRamUsage(ramBarId, blocks) {
             const ramBar = document.getElementById(ramBarId);
-            ramBar.innerHTML = '';
-            blocks.forEach(block => {
+            ramBar.innerHTML = ''; // Limpiar la RAM anterior
+
+            blocks.forEach((block, index) => {
                 const div = document.createElement('div');
-                div.style.width = block.width;
-                div.style.backgroundColor = block.color;
+                div.style.width = '1%';
+                div.style.backgroundColor = block === 1 ? 'yellow' : 'blue';
+                div.style.border = '1px solid black';
                 ramBar.appendChild(div);
             });
         }
 
-        // Example data for RAM bars
-        const ramBlocks1 = [
-            { width: '10px', color: 'red' },
-            { width: '10px', color: 'blue' },
-            { width: '10px', color: 'green' }
-        ];
-        const ramBlocks2 = [
-            { width: '40%', color: 'yellow' },
-            { width: '60%', color: 'purple' }
-        ];
+        // Función para cargar el siguiente bloque de RAM
+        function loadNextRamBlock() {
+            if (currentIndex < ramBlocks1.length) {
+                //ramBlocks1[currentIndex] = 1; // Marcar el bloque como ocupado
+                simulateRamUsage('ram-bar-1', ramBlocks1[currentIndex]);
+                simulateRamUsage('ram-bar-2', ramBlocks2[currentIndex]);
+                currentIndex++; // Incrementar el índice
+            } else {
+                clearInterval(ramInterval); // Detener el intervalo si se han cargado todos los bloques
+                console.log("se acabo las iteas")
+            }
+        }
 
-        simulateRamUsage('ram-bar-1', ramBlocks1);
-        simulateRamUsage('ram-bar-2', ramBlocks2);
+        // Iniciar la simulación: cargar un bloque cada segundo
+        const ramInterval = setInterval(loadNextRamBlock, 10); // 1000 ms = 1 segundo
+
+        // Example data for RAM bars
+        // const ramBlocks1 = [
+        //     { width: '10px', color: 'red' },
+        //     { width: '10px', color: 'blue' },
+        //     { width: '10px', color: 'green' }
+        // ];
+        const ramBlocks2 = JSON.parse('{{ ram2|safe }}');
+        const ramBlocks1 = JSON.parse('{{ ram1|safe }}');
+        //simulateRamUsage('ram-bar-1', ramBlocks1);
+        
 
         // Example function to update MMU tables
         function updateMmuTable(mmuId, data) {
@@ -155,14 +173,7 @@
         }
 
         // Example data for MMU tables
-        const mmuData1 = [
-            { PAGE_ID: 1, PID: 101, LOADED: 'Yes', 'L-ADDR': '0x001', 'M-ADDR': '0x100', 'D-ADDR': '0x200', 'LOADED-T': '10s', MARK: 'A' },
-            { PAGE_ID: 2, PID: 102, LOADED: 'No', 'L-ADDR': '0x002', 'M-ADDR': '0x101', 'D-ADDR': '0x201', 'LOADED-T': '20s', MARK: 'B' }
-        ];
-        const mmuData2 = [
-            { PAGE_ID: 3, PID: 103, LOADED: 'Yes', 'L-ADDR': '0x003', 'M-ADDR': '0x102', 'D-ADDR': '0x202', 'LOADED-T': '30s', MARK: 'C' },
-            { PAGE_ID: 4, PID: 104, LOADED: 'No', 'L-ADDR': '0x004', 'M-ADDR': '0x103', 'D-ADDR': '0x203', 'LOADED-T': '40s', MARK: 'D' }
-        ];
+
 
         updateMmuTable('mmu-1', mmuData1);
         updateMmuTable('mmu-2', mmuData2);
