@@ -54,7 +54,7 @@
         function handleSubmit(event) {
             const fileInput = document.getElementById('file');
             const generatedFile = document.getElementById('generatedFile').value;
-
+            
             // Si no se subió archivo, usamos el generado
             if (fileInput.files.length === 0 && generatedFile === '') {
                 event.preventDefault();

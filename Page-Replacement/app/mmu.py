@@ -7,7 +7,7 @@ RAM_SIZE = 100
 
 class MMU:
     # Method (algoritmo que se va a usar)
-    def __init__(self, method): 
+    def __init__(self, method, instructionSet): 
         self.ram = []
         self.pages = []
         self.ramOcupation = 0 # cuadritos de ram ocupados 
@@ -15,8 +15,8 @@ class MMU:
         self.symbolTable = {}
         self.pageIDs = 1
         self.clock = 0
-        self.fragmentation = 0
         self.method = method
+        self.trashing = 0
         for i in range(RAM_SIZE):
             self.ram.append(None)
         if self.method == "FIFO":
@@ -27,18 +27,18 @@ class MMU:
             self.recentlyUsed = []
         elif self.method == "RND":
             random.seed(3)
-            pass
-        else:
-            pass
+        self.instSet = instructionSet
         
 
     # Funcion para la operacion NEW()
     def new(self, pid, size): 
         pagesNeeded = (size + PAGE_SIZE - 1) // PAGE_SIZE # Calcular cuantas paginas se necesitan
-        auxSize = size - 4000 * (pagesNeeded - 1) # Calcular la fragmentacion 
-        self.fragmentation += 4000 - auxSize # Calcular la fragmentacion 
+        fragmentation = size - 4000 * (pagesNeeded - 1) # Calcular la fragmentacion 
+
         pagesList = [] # Almacena las las listas creadas
         recentlyAdded = []
+        if self.method == "OPT":
+            self.instSet.pop(0)
         for i in range(pagesNeeded):
             page = None
             if self.ramOcupation == RAM_SIZE: # ya no hay espacio en memoria fisica
@@ -52,11 +52,12 @@ class MMU:
                 elif self.method == "RND":
                     page = self.random(pid)
                 else:
-                    pass
+                    page = self.optimal(pid)
                 self.clock += 5
+                self.trashing += 5
             else: # hay espacio disponible en memoria fisica  
                 availableIndex = self.getAvailable() # Obtener el indice mas proximo disponible
-                page = Page(pid, self.pageIDs, availableIndex, False, False) # Se crea la pagina
+                page = Page(pid, self.pageIDs, availableIndex, False, False, self.ptrCounter) # Se crea la pagina
                 self.ram[availableIndex] = page
                 self.ramOcupation += 1
                 self.clock += 1
@@ -70,6 +71,7 @@ class MMU:
                     pass
                 else:
                     pass
+            page.fragmentation = fragmentation
             pagesList.append(page)
             self.pages.append(page)
             self.pageIDs += 1
@@ -82,8 +84,12 @@ class MMU:
     # debe garantizar que las paginas esten en memoria
     def use(self, ptr):
         # sacar la lista de paginas del ptr
+        print(ptr)
         pages = self.symbolTable[ptr]
+
         recentlyAdded = []
+        if self.method == "OPT":
+            self.instSet.pop(0)
         for page in pages:
             # estan en memoria virtual?
             if page.isVirtual:
@@ -96,8 +102,9 @@ class MMU:
                 elif self.method == "RND":
                     self.randomUse(page, pages)
                 else:
-                    pass
+                    self.optimalUse(page)
                 self.clock += 5
+                self.trashing += 5
                 pass
             else:
                 if self.method == "MRU":
@@ -139,6 +146,7 @@ class MMU:
                 self.clock += 1 # es duda no sabemos si agregarlo todavia
             else:
                 self.clock += 5 # tambien es duda
+                self.trashing += 5
         # eliminar de la lista de paginas 
         for page in pages:
             if page in self.pages:
@@ -153,7 +161,7 @@ class MMU:
         index = oldPage.direction
         oldPage.isVirtual = True
         oldPage.direction = None
-        newPage = Page(pid, self.pageIDs, index, False, False)
+        newPage = Page(pid, self.pageIDs, index, False, False, self.ptrCounter)
         self.ram[index] = newPage
         return newPage
 
@@ -167,6 +175,68 @@ class MMU:
         newPage.isVirtual = False
         newPage.direction = index
         self.ram[index] = newPage
+
+    ## OPTIMAL FUNCTIONS
+    def optimal(self, pid):
+        # Debemos sacar la página menos propensa a ser usada
+        steps = 0
+        actualNext = 0
+        inInstructions = False
+        for page in self.ram:
+            if self.ptrCounter == page.pointer:
+                continue
+            actualStep = 0
+            for set in self.instSet:
+                actualStep += 1
+                if set[0] == "new" or set[0] == "kill":
+                    continue
+                if set[1] == page.pointer:
+                    inInstructions = True
+                    if steps <= actualStep:
+                        steps = actualStep
+                        actualNext = page.direction
+                    break
+                else:
+                    inInstructions = False
+                    actualNext = page.direction
+            if not inInstructions:
+                break        
+        oldPage = self.ram[actualNext]
+        oldPage.isVirtual = True
+        oldPage.direction = None
+        newPage = Page(pid, self.pageIDs, actualNext,False,False,self.ptrCounter)
+        self.ram[actualNext] = newPage
+        return newPage
+
+    def optimalUse(self, newPage):
+        # Debemos sacar la página menos propensa a ser usada
+        steps = 0
+        actualNext = 0
+        for page in self.ram:
+            if newPage.pointer == page.pointer:
+                continue
+            actualStep = 0
+            for set in self.instSet:
+                actualStep += 1
+                if set[0] == "new" or set[0] == "kill":
+                    continue
+                if set[1] == page.pointer:
+                    inInstructions = True
+                    if steps <= actualStep:
+                        steps = actualStep
+                        actualNext = page.direction
+                    break
+                else:
+                    inInstructions = False
+                    actualNext = page.direction
+            if not inInstructions:
+                break
+        oldPage = self.ram[actualNext]
+        oldPage.isVirtual = True
+        oldPage.direction = None
+        newPage.isVirtual = False
+        newPage.direction = actualNext
+        self.ram[actualNext] = newPage
 
     ## FIFO FUNCTIONS
     def applyFifo(self, newPage):
@@ -182,7 +252,7 @@ class MMU:
     def popQueue(self, pid):
         index = self.fifo.pop(0)
         self.fifo.append(index)
-        newPage = Page(pid, self.pageIDs, index, False, False)
+        newPage = Page(pid, self.pageIDs, index, False, False, self.ptrCounter)
         oldPage = self.ram[index]
         oldPage.isVirtual = True
         oldPage.direction = None
@@ -205,7 +275,7 @@ class MMU:
             
         self.fifo.pop(i)
         self.fifo.append(index)
-        newPage = Page(pid, self.pageIDs, index, False, False)
+        newPage = Page(pid, self.pageIDs, index, False, False, self.ptrCounter)
         oldPage.isVirtual = True
         oldPage.direction = None
         self.ram[index] = newPage
@@ -236,7 +306,7 @@ class MMU:
     ## MRU FUNCTIONS
     def MRU(self, pid):
         index = self.recentlyUsed.pop()
-        newPage = Page(pid, self.pageIDs, index, False, False)
+        newPage = Page(pid, self.pageIDs, index, False, False, self.ptrCounter)
         oldPage = self.ram[index]
         oldPage.isVirtual = True
         oldPage.direction = None
@@ -274,5 +344,40 @@ class MMU:
                 return i
         return None
 
-    def user(self, ptr):
+    def cantProcess(self):
         pass
+
+    def getfragmentation(self):
+        sum = 0
+        for page in self.pages:
+            if page:
+                sum += page.fragmentation
+        return sum
+
+    def gettrashing(self):
+        return self.trashing
+
+    def trashingovertime(self):
+        return self.trashing // self.clock * 100
+
+    def ramUsage(self):
+        sum = 0
+        for page in self.ram:
+            if page:
+                sum += PAGE_SIZE
+        return sum
+
+    def ramPercentage(self):
+        return self.ramUsage() // RAM_SIZE * PAGE_SIZE * 100
+
+    def vramUsage(self):
+        sum = 0
+        for page in self.pages:
+            if page.isVirtual:
+                sum += PAGE_SIZE
+        return sum
+
+    def vramPercentage(self):
+        return self.vramUsage() // RAM_SIZE  * PAGE_SIZE * 100
+
+

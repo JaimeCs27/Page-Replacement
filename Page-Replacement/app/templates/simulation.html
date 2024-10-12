@@ -134,8 +134,8 @@
         function loadNextRamBlock() {
             if (currentIndex < ramBlocks1.length) {
                 //ramBlocks1[currentIndex] = 1; // Marcar el bloque como ocupado
-                simulateRamUsage('ram-bar-1', ramBlocks1[currentIndex]);
-                simulateRamUsage('ram-bar-2', ramBlocks2[currentIndex]);
+                simulateRamUsage('ram-bar-1', mmuData1[0][currentIndex]);
+                simulateRamUsage('ram-bar-2', mmuData2[0][currentIndex]);
                 currentIndex++; // Incrementar el índice
             } else {
                 clearInterval(ramInterval); // Detener el intervalo si se han cargado todos los bloques
@@ -152,8 +152,8 @@
         //     { width: '10px', color: 'blue' },
         //     { width: '10px', color: 'green' }
         // ];
-        const ramBlocks2 = JSON.parse('{{ ram2|safe }}');
-        const ramBlocks1 = JSON.parse('{{ ram1|safe }}');
+        const mmuData1 = JSON.parse('{{ ram2|safe }}');
+        const mmuData2 = JSON.parse('{{ ram1|safe }}');
         //simulateRamUsage('ram-bar-1', ramBlocks1);
         
 
@@ -175,9 +175,6 @@
         // Example data for MMU tables
 
 
-        updateMmuTable('mmu-1', mmuData1);
-        updateMmuTable('mmu-2', mmuData2);
-
         // Example function to update MMU info
         function updateMmuInfo(mmuInfoId, info) {
             document.getElementById(`${mmuInfoId}-processes`).textContent = info.processes;
@@ -192,34 +189,6 @@
             document.getElementById(`${mmuInfoId}-fragmentation`).textContent = info.fragmentation;
         }
 
-        // Example data for MMU info
-        const mmuInfo1 = {
-            processes: 5,
-            simulationTime: 120,
-            ramUsed: 1024,
-            ramPercent: 50,
-            vramUsed: 2048,
-            vramPercent: 75,
-            pagesLoaded: 10,
-            pagesUnloaded: 5,
-            trashing: 2,
-            fragmentation: 3
-        };
-        const mmuInfo2 = {
-            processes: 3,
-            simulationTime: 90,
-            ramUsed: 512,
-            ramPercent: 25,
-            vramUsed: 1024,
-            vramPercent: 50,
-            pagesLoaded: 8,
-            pagesUnloaded: 2,
-            trashing: 1,
-            fragmentation: 1
-        };
-
-        updateMmuInfo('mmu1', mmuInfo1);
-        updateMmuInfo('mmu2', mmuInfo2);
     </script>
 </body>
 </html>

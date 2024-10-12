@@ -9,7 +9,6 @@ import re
 
 # Create your views here.
 def index(request):
-    print("simTime: " + str())
     return render(request, 'home.html')
 
 
@@ -37,6 +36,7 @@ def parse_instructions_from_string(data_str):
 
 def executeInstruction(mmu, mmu2, step):
     instruction = step[0]
+    print(instruction)
     if instruction == "new":
         mmu.new(step[1], step[2])
         mmu2.new(step[1], step[2])
@@ -56,11 +56,12 @@ def simulation(request):
     if request.method == 'POST':
         generated_file_data = request.POST.get('generatedFile', None)
         uploaded_file = request.FILES.get('file', None)
+        method = request.POST.get('algorithm')
         instrucciones = []
         mmuResult = []
         mmuResult2 = []
-        mmu = MMU("FIFO")
-        mmu2 = MMU("RND")
+        mmu = MMU(method, [])
+        
         if uploaded_file:
             # Si el archivo fue subido por el usuario
             instrucciones = parse_instructions_from_string(generated_file_data)
@@ -71,20 +72,42 @@ def simulation(request):
 
         else:
             return HttpResponse("No se proporcionó archivo", status=400)
-
+        mmu2 = MMU("OPT", instrucciones)
         for instruccion in instrucciones:
             mmuAux1 = []
             mmuAux2 = []
+            ramAux1 = []
+            ramAux2 = []
 
             # Desempaqueta la tupla retornada por `executeInstruction`
             ram1, ram2 = executeInstruction(mmu, mmu2, instruccion)
             
             # Itera sobre ambas listas `ram1` y `ram2`
             for page1 in ram1:
-                mmuAux1.append(1 if page1 is not None else 0)
+                ramAux1.append(1 if page1 is not None else 0)
 
             for page2 in ram2:
-                mmuAux2.append(1 if page2 is not None else 0)
+                ramAux2.append(1 if page2 is not None else 0)
+            mmuAux1.append(ramAux1)
+            mmuAux2.append(ramAux2)
+
+            mmuAux1.append(mmu.clock)
+            mmuAux1.append(mmu.ramUsage())
+            mmuAux1.append(mmu.ramPercentage())
+            mmuAux1.append(mmu.vramUsage())
+            mmuAux1.append(mmu.vramPercentage())
+            mmuAux1.append(mmu.gettrashing())
+            mmuAux1.append(mmu.trashingovertime())
+            mmuAux1.append(mmu.getfragmentation())
+
+            mmuAux2.append(mmu2.clock)
+            mmuAux2.append(mmu2.ramUsage())
+            mmuAux2.append(mmu2.ramPercentage())
+            mmuAux2.append(mmu2.vramUsage())
+            mmuAux2.append(mmu2.vramPercentage())
+            mmuAux2.append(mmu2.gettrashing())
+            mmuAux2.append(mmu2.trashingovertime())
+            mmuAux2.append(mmu2.getfragmentation())
 
             mmuResult.append(mmuAux1)
             mmuResult2.append(mmuAux2)
@@ -100,7 +123,7 @@ def generate_file(request):
         seed = data.get('seed')
         processes = data.get('processes')
         operations = data.get('operations')
-
+        
         # Aquí puedes generar los datos del archivo basado en los parámetros recibidos
         generated_data = {"data": generateFile(int(seed), int(processes), int(operations))}
 
