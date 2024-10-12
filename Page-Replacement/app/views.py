@@ -36,7 +36,6 @@ def parse_instructions_from_string(data_str):
 
 def executeInstruction(mmu, mmu2, step):
     instruction = step[0]
-    print(instruction)
     if instruction == "new":
         mmu.new(step[1], step[2])
         mmu2.new(step[1], step[2])
@@ -60,61 +59,71 @@ def simulation(request):
         instrucciones = []
         mmuResult = []
         mmuResult2 = []
+        mmuJsonAux = []
+        mmuJsonAux2 = []
+
         mmu = MMU(method, [])
         
         if uploaded_file:
-            # Si el archivo fue subido por el usuario
             instrucciones = parse_instructions_from_string(generated_file_data)
-
         elif generated_file_data:
-            # Si el archivo fue generado por la simulación
             instrucciones = parse_instructions_from_string(generated_file_data)
-
         else:
             return HttpResponse("No se proporcionó archivo", status=400)
-        mmu2 = MMU("OPT", instrucciones)
+
+        mmu2 = MMU("OPT", instrucciones.copy())
+        
         for instruccion in instrucciones:
-            mmuAux1 = []
-            mmuAux2 = []
             ramAux1 = []
             ramAux2 = []
 
-            # Desempaqueta la tupla retornada por `executeInstruction`
             ram1, ram2 = executeInstruction(mmu, mmu2, instruccion)
             
-            # Itera sobre ambas listas `ram1` y `ram2`
             for page1 in ram1:
                 ramAux1.append(1 if page1 is not None else 0)
 
             for page2 in ram2:
                 ramAux2.append(1 if page2 is not None else 0)
-            mmuAux1.append(ramAux1)
-            mmuAux2.append(ramAux2)
 
-            mmuAux1.append(mmu.clock)
-            mmuAux1.append(mmu.ramUsage())
-            mmuAux1.append(mmu.ramPercentage())
-            mmuAux1.append(mmu.vramUsage())
-            mmuAux1.append(mmu.vramPercentage())
-            mmuAux1.append(mmu.gettrashing())
-            mmuAux1.append(mmu.trashingovertime())
-            mmuAux1.append(mmu.getfragmentation())
+            mmuJson = {
+                'clock': mmu.clock,
+                'ramUsage': mmu.ramUsage(),
+                'ramPercentage': mmu.ramPercentage(),
+                'vramUsage': mmu.vramUsage(),
+                'vramPercentage': mmu.vramPercentage(),
+                'trashing': mmu.gettrashing(),
+                'trashingovertime': mmu.trashingovertime(),
+                'fragmentation': mmu.getfragmentation()
+            }
 
-            mmuAux2.append(mmu2.clock)
-            mmuAux2.append(mmu2.ramUsage())
-            mmuAux2.append(mmu2.ramPercentage())
-            mmuAux2.append(mmu2.vramUsage())
-            mmuAux2.append(mmu2.vramPercentage())
-            mmuAux2.append(mmu2.gettrashing())
-            mmuAux2.append(mmu2.trashingovertime())
-            mmuAux2.append(mmu2.getfragmentation())
+            mmuJson2 = {
+                'clock': mmu2.clock,
+                'ramUsage': mmu2.ramUsage(),
+                'ramPercentage': mmu2.ramPercentage(),
+                'vramUsage': mmu2.vramUsage(),
+                'vramPercentage': mmu2.vramPercentage(),
+                'trashing': mmu2.gettrashing(),
+                'trashingovertime': mmu2.trashingovertime(),
+                'fragmentation': mmu2.getfragmentation()
+            }
 
-            mmuResult.append(mmuAux1)
-            mmuResult2.append(mmuAux2)
-        
+            mmuResult.append(ramAux1)
+            mmuResult2.append(ramAux2)
+            mmuJsonAux.append(mmuJson)
+            mmuJsonAux2.append(mmuJson2)
         ram_result = json.dumps(mmuResult)
         ram2_result = json.dumps(mmuResult2)
-    return render(request, 'simulation.html', {'ram1': ram_result, 'ram2': ram2_result})
+        mmuJsonResult = json.dumps(mmuJsonAux)
+        mmuJson2Result = json.dumps(mmuJsonAux2)
+
+        # Aquí puedes incluir json y json2 en el contexto
+        return render(request, 'simulation.html', {
+            'ram1': ram_result,
+            'ram2': ram2_result,
+            'json': mmuJsonResult,    # Añadido
+            'json2': mmuJson2Result   # Añadido
+        })
+
 
 @csrf_exempt
 def generate_file(request):

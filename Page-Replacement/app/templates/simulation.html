@@ -120,7 +120,6 @@
         function simulateRamUsage(ramBarId, blocks) {
             const ramBar = document.getElementById(ramBarId);
             ramBar.innerHTML = ''; // Limpiar la RAM anterior
-
             blocks.forEach((block, index) => {
                 const div = document.createElement('div');
                 div.style.width = '1%';
@@ -132,10 +131,13 @@
 
         // Función para cargar el siguiente bloque de RAM
         function loadNextRamBlock() {
-            if (currentIndex < ramBlocks1.length) {
+            if (currentIndex < mmuData1.length) {
                 //ramBlocks1[currentIndex] = 1; // Marcar el bloque como ocupado
-                simulateRamUsage('ram-bar-1', mmuData1[0][currentIndex]);
-                simulateRamUsage('ram-bar-2', mmuData2[0][currentIndex]);
+                simulateRamUsage('ram-bar-1', mmuData1[currentIndex]);
+                simulateRamUsage('ram-bar-2', mmuData2[currentIndex]);
+                console.log(mmuJson[currentIndex]);
+                updateMmuInfo('mmu1', mmuJson[currentIndex]);
+                updateMmuInfo('mmu2', mmuJson2[currentIndex]);
                 currentIndex++; // Incrementar el índice
             } else {
                 clearInterval(ramInterval); // Detener el intervalo si se han cargado todos los bloques
@@ -145,15 +147,13 @@
 
         // Iniciar la simulación: cargar un bloque cada segundo
         const ramInterval = setInterval(loadNextRamBlock, 10); // 1000 ms = 1 segundo
+        const mmuData2 = JSON.parse('{{ ram2|safe }}');
+        const mmuData1 = JSON.parse('{{ ram1|safe }}');
+        // Asegúrate de que json y json2 estén correctamente escapados
+        const mmuJson = JSON.parse('{{ json|safe }}');
+        const mmuJson2 = JSON.parse('{{ json2|safe }}');
 
-        // Example data for RAM bars
-        // const ramBlocks1 = [
-        //     { width: '10px', color: 'red' },
-        //     { width: '10px', color: 'blue' },
-        //     { width: '10px', color: 'green' }
-        // ];
-        const mmuData1 = JSON.parse('{{ ram2|safe }}');
-        const mmuData2 = JSON.parse('{{ ram1|safe }}');
+        // Ahora puedes usar mmuJson y mmu2Json como objetos de JavaScript
         //simulateRamUsage('ram-bar-1', ramBlocks1);
         
 
@@ -177,14 +177,13 @@
 
         // Example function to update MMU info
         function updateMmuInfo(mmuInfoId, info) {
-            document.getElementById(`${mmuInfoId}-processes`).textContent = info.processes;
-            document.getElementById(`${mmuInfoId}-simulation-time`).textContent = info.simulationTime;
-            document.getElementById(`${mmuInfoId}-ram-used`).textContent = info.ramUsed;
-            document.getElementById(`${mmuInfoId}-ram-percent`).textContent = info.ramPercent;
-            document.getElementById(`${mmuInfoId}-vram-used`).textContent = info.vramUsed;
-            document.getElementById(`${mmuInfoId}-vram-percent`).textContent = info.vramPercent;
-            document.getElementById(`${mmuInfoId}-pages-loaded`).textContent = info.pagesLoaded;
-            document.getElementById(`${mmuInfoId}-pages-unloaded`).textContent = info.pagesUnloaded;
+            console.log(info)
+            document.getElementById(`${mmuInfoId}-processes`).textContent = info.clock;
+            document.getElementById(`${mmuInfoId}-simulation-time`).textContent = info.clock;
+            document.getElementById(`${mmuInfoId}-ram-used`).textContent = info.ramUsage;
+            document.getElementById(`${mmuInfoId}-ram-percent`).textContent = info.ramPercentage;
+            document.getElementById(`${mmuInfoId}-vram-used`).textContent = info.vramUsage;
+            document.getElementById(`${mmuInfoId}-vram-percent`).textContent = info.vramPercentage;
             document.getElementById(`${mmuInfoId}-trashing`).textContent = info.trashing;
             document.getElementById(`${mmuInfoId}-fragmentation`).textContent = info.fragmentation;
         }

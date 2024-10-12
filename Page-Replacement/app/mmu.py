@@ -84,7 +84,6 @@ class MMU:
     # debe garantizar que las paginas esten en memoria
     def use(self, ptr):
         # sacar la lista de paginas del ptr
-        print(ptr)
         pages = self.symbolTable[ptr]
 
         recentlyAdded = []
@@ -213,7 +212,7 @@ class MMU:
         steps = 0
         actualNext = 0
         for page in self.ram:
-            if newPage.pointer == page.pointer:
+            if page == None or newPage.pointer == page.pointer:
                 continue
             actualStep = 0
             for set in self.instSet:
@@ -361,23 +360,21 @@ class MMU:
         return self.trashing // self.clock * 100
 
     def ramUsage(self):
-        sum = 0
-        for page in self.ram:
-            if page:
-                sum += PAGE_SIZE
-        return sum
+        total_usage = sum(PAGE_SIZE for page in self.ram if page)  # Uso total en bytes
+        return total_usage
 
     def ramPercentage(self):
-        return self.ramUsage() // RAM_SIZE * PAGE_SIZE * 100
+        total_ram_size = RAM_SIZE * PAGE_SIZE  # Tamaño total de RAM en bytes
+        used_ram = self.ramUsage()  # Uso de RAM en bytes
+        return (used_ram / total_ram_size) * 100 if total_ram_size > 0 else 0  # Calcula el porcentaje
 
     def vramUsage(self):
-        sum = 0
-        for page in self.pages:
-            if page.isVirtual:
-                sum += PAGE_SIZE
-        return sum
+        total_usage = sum(PAGE_SIZE for page in self.pages if page.isVirtual)  # Uso total en bytes
+        return total_usage
 
     def vramPercentage(self):
-        return self.vramUsage() // RAM_SIZE  * PAGE_SIZE * 100
+        total_ram_size = RAM_SIZE * PAGE_SIZE  # Tamaño total de RAM en bytes
+        used_vram = self.vramUsage()  # Uso de VRAM en bytes
+        return (used_vram / total_ram_size) * 100 if total_ram_size > 0 else 0  # Calcula el porcentaje
 
 
