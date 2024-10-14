@@ -80,12 +80,48 @@ def simulation(request):
             ram1, ram2 = executeInstruction(mmu, mmu2, instruccion)
             
             for page1 in ram1:
-                ramAux1.append(1 if page1 is not None else 0)
+                ramAux1.append(page1.pid if page1 is not None else 0)
 
             for page2 in ram2:
-                ramAux2.append(1 if page2 is not None else 0)
+                ramAux2.append(page2.pid if page2 is not None else 0)
+
+            pages1 = []
+            pages2 = []
+
+            for page in mmu.pages:
+                loaded = "X"
+                mark = ""
+                if page.isMarked:
+                    mark = "X"
+                if page.isVirtual:
+                    loaded = ""
+                pageJson = {
+                    'id': page.id,
+                    'pid': page.pid,
+                    'maddress': page.direction,
+                    'loaded': loaded,
+                    'mark': mark,
+                }
+                pages1.append(pageJson)
+
+            for page in mmu2.pages:
+                loaded = "X"
+                mark = ""
+                if page.isMarked:
+                    mark = "X"
+                if page.isVirtual:
+                    loaded = ""
+                pageJson = {
+                    'id': page.id,
+                    'pid': page.pid,
+                    'maddress': page.direction,
+                    'loaded': loaded,
+                    'mark': mark,
+                }
+                pages2.append(pageJson)
 
             mmuJson = {
+                'mmu': pages1,
                 'clock': mmu.clock,
                 'ramUsage': mmu.ramUsage(),
                 'ramPercentage': mmu.ramPercentage(),
@@ -97,6 +133,7 @@ def simulation(request):
             }
 
             mmuJson2 = {
+                'mmu': pages2,
                 'clock': mmu2.clock,
                 'ramUsage': mmu2.ramUsage(),
                 'ramPercentage': mmu2.ramPercentage(),
@@ -116,8 +153,10 @@ def simulation(request):
         mmuJsonResult = json.dumps(mmuJsonAux)
         mmuJson2Result = json.dumps(mmuJsonAux2)
 
+
         # Aquí puedes incluir json y json2 en el contexto
         return render(request, 'simulation.html', {
+            'algorithm': method,
             'ram1': ram_result,
             'ram2': ram2_result,
             'json': mmuJsonResult,    # Añadido

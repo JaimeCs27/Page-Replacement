@@ -351,30 +351,30 @@ class MMU:
         for page in self.pages:
             if page:
                 sum += page.fragmentation
-        return sum
+        return sum // 1000
 
     def gettrashing(self):
         return self.trashing
 
     def trashingovertime(self):
-        return self.trashing // self.clock * 100
+        return round(self.trashing / self.clock * 100, 2)
 
     def ramUsage(self):
         total_usage = sum(PAGE_SIZE for page in self.ram if page)  # Uso total en bytes
-        return total_usage
+        return total_usage // 1000
 
     def ramPercentage(self):
         total_ram_size = RAM_SIZE * PAGE_SIZE  # Tamaño total de RAM en bytes
         used_ram = self.ramUsage()  # Uso de RAM en bytes
-        return (used_ram / total_ram_size) * 100 if total_ram_size > 0 else 0  # Calcula el porcentaje
+        return round((used_ram / total_ram_size) * 100000 if total_ram_size > 0 else 0, 2)  # Calcula el porcentaje
 
     def vramUsage(self):
         total_usage = sum(PAGE_SIZE for page in self.pages if page.isVirtual)  # Uso total en bytes
-        return total_usage
+        return total_usage // 1000
 
     def vramPercentage(self):
         total_ram_size = RAM_SIZE * PAGE_SIZE  # Tamaño total de RAM en bytes
         used_vram = self.vramUsage()  # Uso de VRAM en bytes
-        return (used_vram / total_ram_size) * 100 if total_ram_size > 0 else 0  # Calcula el porcentaje
+        return round((used_vram / total_ram_size) * 100000 if total_ram_size > 0 else 0, 2)  # Calcula el porcentaje
 
 

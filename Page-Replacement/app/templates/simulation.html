@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load heroicons%}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -24,97 +25,158 @@
             display: flex;
             justify-content: space-between;
             margin-bottom: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .mmu-table-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .mmu-info-container{
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        .table-wrapper {
+            width: 48%; /* Asegura que ambas tablas ocupen el 48% del espacio disponible */
         }
         table {
-            width: 48%;
+            width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
+            
         }
         th, td {
             border: 1px solid #000;
-            padding: 8px;
+            width: 20%;
+            padding-top: 3px;
+            padding-bottom: 3px;
             text-align: center;
+            font-weight: bolder;
         }
         th {
             background-color: #ddd;
         }
         .mmu-info {
-            margin-bottom: 20px;
+            margin-top: 20px;
+            width: 48%;
         }
     </style>
 </head>
 <body>
+    <div> 
+        <button id="home-button" onclick="window.location.href='/'">
+            {% heroicon_outline "home"%}            
+        </button>
+        <button id="pause-button" onclick="stopSimulation()">
+            {% heroicon_outline "pause-circle"%}            
+        </button>
+    </div>
+    <h3>MMU - {{algorithm}}</h3>
     <div class="ram-bar" id="ram-bar-1">
         <!-- Simulated RAM blocks will be inserted here -->
     </div>
+    <h3>MMU - OPT</h3>
     <div class="ram-bar" id="ram-bar-2">
         <!-- Simulated RAM blocks will be inserted here -->
     </div>
 
-    <div class="mmu-container">
-        <table id="mmu-1">
-            <thead>
-                <tr>
-                    <th>PAGE_ID</th>
-                    <th>PID</th>
-                    <th>LOADED</th>
-                    <th>L-ADDR</th>
-                    <th>M-ADDR</th>
-                    <th>D-ADDR</th>
-                    <th>LOADED-T</th>
-                    <th>MARK</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- MMU 1 data will be inserted here -->
-            </tbody>
-        </table>
-        <table id="mmu-2">
-            <thead>
-                <tr>
-                    <th>PAGE_ID</th>
-                    <th>PID</th>
-                    <th>LOADED</th>
-                    <th>L-ADDR</th>
-                    <th>M-ADDR</th>
-                    <th>D-ADDR</th>
-                    <th>LOADED-T</th>
-                    <th>MARK</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- MMU 2 data will be inserted here -->
-            </tbody>
-        </table>
+    <div class="mmu-table-container"> 
+        <div class="table-wrapper">
+            <h3>MMU - {{algorithm}}</h3>
+            <table id="mmu-1">
+                <thead>
+                    <tr>
+                        <th>PAGE_ID</th>
+                        <th>PID</th>
+                        <th>M-ADDR</th>
+                        <th>LOADED</th>
+                        <th>MARK</th>
+                    </tr>
+                </thead>
+            </table>
+            <div class="mmu-container">
+                <table id="mmu-1-body">
+                    
+                    <tbody>
+                        <!-- MMU 1 data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    
+        <div class="table-wrapper">
+            <h3>MMU - OPT</h3>
+            <table id="mmu-2">
+                <thead>
+                    <tr>
+                        <th>PAGE_ID</th>
+                        <th>PID</th>
+                        <th>M-ADDR</th>
+                        <th>LOADED</th>
+                        <th>MARK</th>
+                    </tr>
+                </thead>
+            </table>
+            <div class="mmu-container">
+                <table id="mmu-2-body">
+                    <tbody>
+                        <!-- MMU 2 data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <div class="mmu-info" id="mmu-info-1">
-        <h3>MMU 1 Information</h3>
-        <p>Processes: <span id="mmu1-processes">0</span></p>
-        <p>Simulation Time: <span id="mmu1-simulation-time">0</span> seconds</p>
-        <p>RAM Used: <span id="mmu1-ram-used">0</span> KB (<span id="mmu1-ram-percent">0</span>%)</p>
-        <p>V-RAM Used: <span id="mmu1-vram-used">0</span> KB (<span id="mmu1-vram-percent">0</span>%)</p>
-        <p>Pages Loaded: <span id="mmu1-pages-loaded">0</span></p>
-        <p>Pages Unloaded: <span id="mmu1-pages-unloaded">0</span></p>
-        <p>Trashing: <span id="mmu1-trashing">0</span></p>
-        <p>Fragmentation: <span id="mmu1-fragmentation">0</span></p>
+    
+    <div class="mmu-info-container">
+        <div class="mmu-info" id="mmu-info-1">
+            <h3>MMU - {{algorithm}}</h3>
+            <p>Processes: <span id="mmu1-processes">0</span></p>
+            <p>Simulation Time: <span id="mmu1-simulation-time">0</span> seconds</p>
+            <p>RAM Used: <span id="mmu1-ram-used">0</span> KB (<span id="mmu1-ram-percent">0</span>%)</p>
+            <p>V-RAM Used: <span id="mmu1-vram-used">0</span> KB (<span id="mmu1-vram-percent">0</span>%)</p>
+            <span id="mmu1-trashing-color"><p>Trashing: <span id="mmu1-trashing">0</span> seconds </p>
+            <p>Trashing Percentage: <span id="mmu1-trashing-overtime">0</span>%</p></span>
+            <p>Fragmentation: <span id="mmu1-fragmentation">0</span> KB </p>
+        </div>
+    
+        <div class="mmu-info" id="mmu-info-2">
+            <h3>MMU - OPT</h3>
+            <p>Processes: <span id="mmu2-processes">0</span></p>
+            <p>Simulation Time: <span id="mmu2-simulation-time">0</span> seconds</p>
+            <p>RAM Used: <span id="mmu2-ram-used">0</span> KB (<span id="mmu2-ram-percent">0</span>%)</p>
+            <p>V-RAM Used: <span id="mmu2-vram-used">0</span> KB (<span id="mmu2-vram-percent">0</span>%)</p>
+            <span id="mmu2-trashing-color"><p>Trashing: <span id="mmu2-trashing">0</span> seconds </p>
+            <p>Trashing Percentage: <span id="mmu2-trashing-overtime">0</span>%</p></span>
+            <p>Fragmentation: <span id="mmu2-fragmentation">0</span> KB </p>
+        </div>
     </div>
 
-    <div class="mmu-info" id="mmu-info-2">
-        <h3>MMU 2 Information</h3>
-        <p>Processes: <span id="mmu2-processes">0</span></p>
-        <p>Simulation Time: <span id="mmu2-simulation-time">0</span> seconds</p>
-        <p>RAM Used: <span id="mmu2-ram-used">0</span> KB (<span id="mmu2-ram-percent">0</span>%)</p>
-        <p>V-RAM Used: <span id="mmu2-vram-used">0</span> KB (<span id="mmu2-vram-percent">0</span>%)</p>
-        <p>Pages Loaded: <span id="mmu2-pages-loaded">0</span></p>
-        <p>Pages Unloaded: <span id="mmu2-pages-unloaded">0</span></p>
-        <p>Trashing: <span id="mmu2-trashing">0</span></p>
-        <p>Fragmentation: <span id="mmu2-fragmentation">0</span></p>
-    </div>
+    
 
     <script>
         // Example function to simulate RAM usage
         let currentIndex = 0; // Índice del bloque actual que se está cargando
+
+        function numberToHexColor(randomNumber) {
+            // Normaliza el número aleatorio en un rango de 0 a 16777215 (equivalente a #000000 a #FFFFFF)
+            let scaledNumber = Math.floor((randomNumber / 5000) * 16777215);
+
+            // Extrae las componentes de color
+            let red = (scaledNumber >> 16) % 256; // Extrae los primeros 8 bits
+            let green = (scaledNumber >> 8) % 256; // Extrae los siguientes 8 bits
+            let blue = scaledNumber % 256; // Extrae los últimos 8 bits
+
+            // Convierte cada componente a hexadecimal y asegura que tenga 2 dígitos
+            let color = '#' + red.toString(16).padStart(2, '0') +
+                            green.toString(16).padStart(2, '0') +
+                            blue.toString(16).padStart(2, '0');
+
+            return color;
+        }
 
         // Función para simular el uso de RAM
         function simulateRamUsage(ramBarId, blocks) {
@@ -123,11 +185,23 @@
             blocks.forEach((block, index) => {
                 const div = document.createElement('div');
                 div.style.width = '1%';
-                div.style.backgroundColor = block === 1 ? 'yellow' : 'blue';
+                div.style.backgroundColor = block != 0 ? numberToHexColor(block) : 'white';
                 div.style.border = '1px solid black';
                 ramBar.appendChild(div);
             });
         }
+
+        let stop = false;
+
+        function stopSimulation() {
+            stop = !stop;
+            const button = document.getElementById('pause-button');
+            if (stop) {
+                button.innerHTML = `{% heroicon_outline "play-circle" %}`;
+            } else {
+                button.innerHTML = `{% heroicon_outline "pause-circle" %}`;
+            }
+    }
 
         // Función para cargar el siguiente bloque de RAM
         function loadNextRamBlock() {
@@ -135,10 +209,14 @@
                 //ramBlocks1[currentIndex] = 1; // Marcar el bloque como ocupado
                 simulateRamUsage('ram-bar-1', mmuData1[currentIndex]);
                 simulateRamUsage('ram-bar-2', mmuData2[currentIndex]);
-                console.log(mmuJson[currentIndex]);
                 updateMmuInfo('mmu1', mmuJson[currentIndex]);
                 updateMmuInfo('mmu2', mmuJson2[currentIndex]);
-                currentIndex++; // Incrementar el índice
+                updateMmuTable('mmu-1-body', mmuJson[currentIndex].mmu);
+                updateMmuTable('mmu-2-body', mmuJson2[currentIndex].mmu);
+                if (!stop){
+                    currentIndex++; // Incrementar el índice
+
+                }
             } else {
                 clearInterval(ramInterval); // Detener el intervalo si se han cargado todos los bloques
                 console.log("se acabo las iteas")
@@ -163,9 +241,11 @@
             tbody.innerHTML = '';
             data.forEach(row => {
                 const tr = document.createElement('tr');
+                tr.style.backgroundColor = numberToHexColor(row.pid)
                 Object.values(row).forEach(cell => {
                     const td = document.createElement('td');
                     td.textContent = cell;
+                    td.style.color = 'white'
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
@@ -177,14 +257,22 @@
 
         // Example function to update MMU info
         function updateMmuInfo(mmuInfoId, info) {
-            console.log(info)
             document.getElementById(`${mmuInfoId}-processes`).textContent = info.clock;
             document.getElementById(`${mmuInfoId}-simulation-time`).textContent = info.clock;
             document.getElementById(`${mmuInfoId}-ram-used`).textContent = info.ramUsage;
             document.getElementById(`${mmuInfoId}-ram-percent`).textContent = info.ramPercentage;
             document.getElementById(`${mmuInfoId}-vram-used`).textContent = info.vramUsage;
             document.getElementById(`${mmuInfoId}-vram-percent`).textContent = info.vramPercentage;
-            document.getElementById(`${mmuInfoId}-trashing`).textContent = info.trashing;
+            if (info.trashingovertime > 60){
+                document.getElementById(`${mmuInfoId}-trashing`).textContent = info.trashing;
+                document.getElementById(`${mmuInfoId}-trashing`).style.color = 'red'
+                document.getElementById(`${mmuInfoId}-trashing-color`).style.color = 'red'
+                document.getElementById(`${mmuInfoId}-trashing-overtime`).textContent = info.trashingovertime;
+                document.getElementById(`${mmuInfoId}-trashing-overtime`).style.color = 'red'
+            } else{
+                document.getElementById(`${mmuInfoId}-trashing`).textContent = info.trashing;
+                document.getElementById(`${mmuInfoId}-trashing-overtime`).textContent = info.trashingovertime;
+            }
             document.getElementById(`${mmuInfoId}-fragmentation`).textContent = info.fragmentation;
         }
 
