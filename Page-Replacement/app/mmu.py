@@ -66,7 +66,7 @@ class MMU:
                 elif self.method == "SC":
                     self.fifo.append(availableIndex)
                 elif self.method == "MRU":
-                    self.recentlyUsed.append(availableIndex)
+                    self.recentlyAdded.append(availableIndex)
                 elif self.method == "RND":
                     pass
                 else:
@@ -157,6 +157,8 @@ class MMU:
     ## RANDOM FUNCTIONS
     def random(self, pid):
         oldPage = random.choice(self.ram)
+        while oldPage.pointer != self.ptrCounter or oldPage == None:
+            oldPage = random.choice(self.ram)
         index = oldPage.direction
         oldPage.isVirtual = True
         oldPage.direction = None
@@ -165,9 +167,9 @@ class MMU:
         self.ram[index] = newPage
         return newPage
 
-    def randomUse(self, newPage, pages):
+    def randomUse(self, newPage):
         oldPage = random.choice(self.ram)
-        while oldPage in pages or oldPage == None:
+        while oldPage.pointer == newPage.pointer or oldPage == None:
             oldPage = random.choice(self.ram)
         index = oldPage.direction
         oldPage.isVirtual = True
