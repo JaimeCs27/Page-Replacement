@@ -72,7 +72,7 @@ def simulation(request):
         else:
             return HttpResponse("No se proporcionó archivo", status=400)
 
-        mmu2 = MMU("OPT", instrucciones.copy())
+        mmu2 = MMU("FIFO", instrucciones.copy())
         
         for instruccion in instrucciones:
             ramAux1 = []
