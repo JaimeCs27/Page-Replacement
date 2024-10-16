@@ -66,7 +66,7 @@ class MMU:
                 elif self.method == "SC":
                     self.fifo.append(availableIndex)
                 elif self.method == "MRU":
-                    self.recentlyAdded.append(availableIndex)
+                    recentlyAdded.append(availableIndex)
                 elif self.method == "RND":
                     pass
                 else:

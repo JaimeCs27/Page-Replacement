@@ -161,6 +161,7 @@ def simulation(request):
         mmuJson2Result = json.dumps(mmuJsonAux2)
 
 
+        
         # Aquí puedes incluir json y json2 en el contexto
         return render(request, 'simulation.html', {
             'algorithm': method,
