@@ -26,7 +26,7 @@ class MMU:
         elif self.method == "MRU":
             self.recentlyUsed = []
         elif self.method == "RND":
-            random.seed(3)
+            random.seed(2)
         self.instSet = instructionSet
         
 
@@ -180,7 +180,6 @@ class MMU:
 
     ## OPTIMAL FUNCTIONS
     def optimal(self, pid):
-        # Debemos sacar la página menos propensa a ser usada
         steps = 0
         actualNext = 0
         inInstructions = False
@@ -212,7 +211,6 @@ class MMU:
         return newPage
 
     def optimalUse(self, newPage):
-        # Debemos sacar la página menos propensa a ser usada
         steps = 0
         actualNext = 0
         for page in self.ram:
