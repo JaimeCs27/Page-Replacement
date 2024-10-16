@@ -1,5 +1,5 @@
 class Page:
-    def __init__(self, pid, id, direction, isVirtual, isMarked, pointer):
+    def __init__(self, pid, id, direction, isVirtual, isMarked, pointer, timeStamp):
         self.pid = pid
         self.id = id
         self.direction = direction
@@ -7,6 +7,7 @@ class Page:
         self.isMarked = isMarked
         self.pointer = pointer
         self.fragmentation = 0
+        self.timeStamp = timeStamp
         
     def __str__(self) -> str:
         return (f"Page(pid={self.pid}, id={self.id}, direction={self.direction}, "

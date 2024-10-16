@@ -14,9 +14,11 @@ def generateFile(seed, processAmount, operationsAmount):
     z = 0
     while operationsCounter < operationsAmount:
         instruction = random.randrange(0,100)
-        if instruction > 58:
+        if instruction > 65:
             size = random.randrange(0, 12000)
             pid = random.randrange(processAmount)
+            if len(pidList) == processAmount:
+                break
             while pid in killedPid:
                 if len(killedPid) == processAmount:
                     operationsCounter = operationsAmount
@@ -31,7 +33,7 @@ def generateFile(seed, processAmount, operationsAmount):
             data[pid].append(ptrCounter)
             ptrCounter += 1
             operationsCounter += 1
-        elif instruction > 15:
+        elif instruction > 32:
             if len(ptrList) > 0:
                 ptr = random.choice(ptrList)
                 result += "use(" + str(ptr) + ")\n"

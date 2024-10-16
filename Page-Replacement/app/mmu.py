@@ -57,7 +57,7 @@ class MMU:
                 self.trashing += 5
             else: # hay espacio disponible en memoria fisica  
                 availableIndex = self.getAvailable() # Obtener el indice mas proximo disponible
-                page = Page(pid, self.pageIDs, availableIndex, False, False, self.ptrCounter) # Se crea la pagina
+                page = Page(pid, self.pageIDs, availableIndex, False, False, self.ptrCounter, self.clock) # Se crea la pagina
                 self.ram[availableIndex] = page
                 self.ramOcupation += 1
                 self.clock += 1
@@ -160,7 +160,8 @@ class MMU:
         index = oldPage.direction
         oldPage.isVirtual = True
         oldPage.direction = None
-        newPage = Page(pid, self.pageIDs, index, False, False, self.ptrCounter)
+        oldPage.timeStamp = None
+        newPage = Page(pid, self.pageIDs, index, False, False, self.ptrCounter, self.clock)
         self.ram[index] = newPage
         return newPage
 
@@ -171,8 +172,10 @@ class MMU:
         index = oldPage.direction
         oldPage.isVirtual = True
         oldPage.direction = None
+        oldPage.timeStamp = None
         newPage.isVirtual = False
         newPage.direction = index
+        newPage.timeStamp = self.clock
         self.ram[index] = newPage
 
     ## OPTIMAL FUNCTIONS
@@ -203,7 +206,8 @@ class MMU:
         oldPage = self.ram[actualNext]
         oldPage.isVirtual = True
         oldPage.direction = None
-        newPage = Page(pid, self.pageIDs, actualNext,False,False,self.ptrCounter)
+        oldPage.timeStamp = None
+        newPage = Page(pid, self.pageIDs, actualNext,False,False,self.ptrCounter, self.clock)
         self.ram[actualNext] = newPage
         return newPage
 
@@ -235,6 +239,8 @@ class MMU:
         oldPage.direction = None
         newPage.isVirtual = False
         newPage.direction = actualNext
+        oldPage.timeStamp = None
+        newPage.timeStamp = self.clock
         self.ram[actualNext] = newPage
 
     ## FIFO FUNCTIONS
@@ -246,15 +252,19 @@ class MMU:
         oldPage = self.ram[index]
         oldPage.isVirtual = True
         oldPage.direction = None
+        oldPage.timeStamp = None
+        newPage.timeStamp = self.clock
         self.ram[index] = newPage
         
     def popQueue(self, pid):
         index = self.fifo.pop(0)
         self.fifo.append(index)
-        newPage = Page(pid, self.pageIDs, index, False, False, self.ptrCounter)
+        newPage = Page(pid, self.pageIDs, index, False, False, self.ptrCounter, self.clock)
         oldPage = self.ram[index]
         oldPage.isVirtual = True
         oldPage.direction = None
+        oldPage.timeStamp = None
+        newPage.timeStamp = self.clock
         self.ram[index] = newPage
         return newPage
 
@@ -274,9 +284,10 @@ class MMU:
             
         self.fifo.pop(i)
         self.fifo.append(index)
-        newPage = Page(pid, self.pageIDs, index, False, False, self.ptrCounter)
+        newPage = Page(pid, self.pageIDs, index, False, False, self.ptrCounter, self.clock)
         oldPage.isVirtual = True
         oldPage.direction = None
+        oldPage.timeStamp = None
         self.ram[index] = newPage
         return newPage
 
@@ -300,15 +311,18 @@ class MMU:
         oldPage.isVirtual = True
         oldPage.direction = None
         oldPage.isMarked = False
+        oldPage.timeStamp = None
+        newPage.timeStamp = self.clock
         self.ram[index] = newPage
 
     ## MRU FUNCTIONS
     def MRU(self, pid):
         index = self.recentlyUsed.pop()
-        newPage = Page(pid, self.pageIDs, index, False, False, self.ptrCounter)
+        newPage = Page(pid, self.pageIDs, index, False, False, self.ptrCounter, self.clock)
         oldPage = self.ram[index]
         oldPage.isVirtual = True
         oldPage.direction = None
+        oldPage.timeStamp = None
         self.ram[index] = newPage
         return newPage
     
@@ -319,6 +333,8 @@ class MMU:
         oldPage.direction = None
         newPage.isVirtual = False
         newPage.direction = index
+        oldPage.timeStamp = None
+        newPage.timeStamp = self.clock
         self.ram[index] = newPage
         return index
 
@@ -344,7 +360,11 @@ class MMU:
         return None
 
     def cantProcess(self):
-        pass
+        pids = []
+        for page in self.pages:
+            if page != None and page.pid not in pids:
+                pids.append(page.pid)
+        return len(pids)
 
     def getfragmentation(self):
         sum = 0

@@ -65,7 +65,8 @@ def simulation(request):
         mmu = MMU(method, [])
         
         if uploaded_file:
-            instrucciones = parse_instructions_from_string(generated_file_data)
+            file_data = uploaded_file.read().decode('utf-8')
+            instrucciones = parse_instructions_from_string(file_data)
         elif generated_file_data:
             instrucciones = parse_instructions_from_string(generated_file_data)
         else:
@@ -99,8 +100,10 @@ def simulation(request):
                     'id': page.id,
                     'pid': page.pid,
                     'maddress': page.direction,
+                    'laddress': page.pointer,
                     'loaded': loaded,
                     'mark': mark,
+                    'time': page.timeStamp
                 }
                 pages1.append(pageJson)
 
@@ -115,8 +118,10 @@ def simulation(request):
                     'id': page.id,
                     'pid': page.pid,
                     'maddress': page.direction,
+                    'laddress': page.pointer,
                     'loaded': loaded,
                     'mark': mark,
+                    'time': page.timeStamp
                 }
                 pages2.append(pageJson)
 
@@ -129,7 +134,8 @@ def simulation(request):
                 'vramPercentage': mmu.vramPercentage(),
                 'trashing': mmu.gettrashing(),
                 'trashingovertime': mmu.trashingovertime(),
-                'fragmentation': mmu.getfragmentation()
+                'fragmentation': mmu.getfragmentation(),
+                'cantProcess': mmu.cantProcess() 
             }
 
             mmuJson2 = {
@@ -141,7 +147,8 @@ def simulation(request):
                 'vramPercentage': mmu2.vramPercentage(),
                 'trashing': mmu2.gettrashing(),
                 'trashingovertime': mmu2.trashingovertime(),
-                'fragmentation': mmu2.getfragmentation()
+                'fragmentation': mmu2.getfragmentation(),
+                'cantProcess': mmu2.cantProcess() 
             }
 
             mmuResult.append(ramAux1)

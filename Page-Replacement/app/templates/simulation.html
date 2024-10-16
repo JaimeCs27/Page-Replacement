@@ -46,11 +46,10 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
-            
         }
         th, td {
             border: 1px solid #000;
-            width: 20%;
+            width: 14.25%;
             padding-top: 3px;
             padding-bottom: 3px;
             text-align: center;
@@ -92,8 +91,10 @@
                         <th>PAGE_ID</th>
                         <th>PID</th>
                         <th>M-ADDR</th>
+                        <th>L-ADDR</th>
                         <th>LOADED</th>
                         <th>MARK</th>
+                        <th>T-LOADED</th>
                     </tr>
                 </thead>
             </table>
@@ -115,8 +116,10 @@
                         <th>PAGE_ID</th>
                         <th>PID</th>
                         <th>M-ADDR</th>
+                        <th>L-ADDR</th>
                         <th>LOADED</th>
                         <th>MARK</th>
+                        <th>T-LOADED</th>
                     </tr>
                 </thead>
             </table>
@@ -257,7 +260,7 @@
 
         // Example function to update MMU info
         function updateMmuInfo(mmuInfoId, info) {
-            document.getElementById(`${mmuInfoId}-processes`).textContent = info.clock;
+            document.getElementById(`${mmuInfoId}-processes`).textContent = info.cantProcess;
             document.getElementById(`${mmuInfoId}-simulation-time`).textContent = info.clock;
             document.getElementById(`${mmuInfoId}-ram-used`).textContent = info.ramUsage;
             document.getElementById(`${mmuInfoId}-ram-percent`).textContent = info.ramPercentage;
