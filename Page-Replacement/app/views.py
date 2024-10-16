@@ -195,6 +195,7 @@ def simulation(request):
         print("\n\nTermino MMU:", formatted_time)
         print("Duración del proceso en minutos:", time_difference_in_minutes)
 
+        
         # Aquí puedes incluir json y json2 en el contexto
         return render(request, 'simulation.html', {
             'algorithm': method,
