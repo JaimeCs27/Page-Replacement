@@ -3,9 +3,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, HttpResponse
 from datetime import datetime
 import json
+import tempfile
 from .mmu import MMU
 from .generateFile import generateFile
 import re
+import os
 
 
 # Create your views here.
@@ -170,13 +172,40 @@ def simulation(request):
         request.session['mmuJson2Data'] = mmuJsonAux2
 
         if not len(mmuResult) < 10:
+
             listForDraw = dividir_indices_inicio_fin(mmuResult)
             indexForDraw = 0
+
+            mmuRam1_file = save_data_to_tempfile(mmuResult)
+            mmuRam2_file = save_data_to_tempfile(mmuResult2)
+            mmuJson1_file = save_data_to_tempfile(mmuJsonAux)
+            mmuJson2_file = save_data_to_tempfile(mmuJsonAux2)
+            
             ram_result = json.dumps(mmuResult[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
             ram2_result = json.dumps(mmuResult2[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
             mmuJsonResult = json.dumps(mmuJsonAux[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
             mmuJson2Result = json.dumps(mmuJsonAux2[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
+            print("Iteracion", indexForDraw)
+            print(len(mmuResult))
+            print(len(mmuResult2))
+            print(len(mmuJsonAux))
+            print(len(mmuJsonAux2))
             indexForDraw += 1
+
+            # del mmuResult[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]]
+            # del mmuResult2[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]]
+            # del mmuJsonAux[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]]
+            # del mmuJsonAux2[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]]
+            
+            
+
+
+            # Guardar las rutas de los archivos en la sesión
+            request.session['mmuRam1_file'] = mmuRam1_file
+            request.session['mmuRam2_file'] = mmuRam2_file
+            request.session['mmuJson1_file'] = mmuJson1_file
+            request.session['mmuJson2_file'] = mmuJson2_file
+
         else:
             listForDraw = []
             indexForDraw = -1
@@ -185,11 +214,6 @@ def simulation(request):
             mmuJsonResult = json.dumps(mmuJsonAux)
             mmuJson2Result = json.dumps(mmuJsonAux2)
 
-
-        
-
-        
-
         current_time = datetime.now()
 
         # Calcular la diferencia de tiempo
@@ -197,9 +221,6 @@ def simulation(request):
 
         # Convertir la diferencia a minutos
         time_difference_in_minutes = time_difference.total_seconds() / 60
-
-        # Formatear el tiempo actual como una cadena
-        formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
 
         print("Terminaron ambas MMU")
         print("Duración del proceso en minutos: ", time_difference_in_minutes)
@@ -215,21 +236,36 @@ def simulation(request):
             'listForDraw': json.dumps(listForDraw),
             'indexForDraw': indexForDraw,
         })
+    return HttpResponse("Método no permitido", status=405)
 
 @csrf_exempt
 def fetch_next_iterations(request):
-    mmuRam1 = request.session.get('mmuRam1', [])
-    mmuRam2 = request.session.get('mmuRam2', [])
-    mmuJson1Data = request.session.get('mmuJson1Data', [])
-    mmuJson2Data = request.session.get('mmuJson2Data', [])
-    
     if request.method == 'POST':
         actualIndexForDraw = int(request.POST.get('indexForDraw', 0)) 
         listForDraw = json.loads(request.POST.get('listForDraw', '[]')) 
-        ram_result = json.dumps(mmuRam1[listForDraw[actualIndexForDraw][0]:listForDraw[actualIndexForDraw][1]])
-        ram2_result = json.dumps(mmuRam2[listForDraw[actualIndexForDraw][0]:listForDraw[actualIndexForDraw][1]])
-        mmuJsonResult = json.dumps(mmuJson1Data[listForDraw[actualIndexForDraw][0]:listForDraw[actualIndexForDraw][1]])
-        mmuJson2Result = json.dumps(mmuJson2Data[listForDraw[actualIndexForDraw][0]:listForDraw[actualIndexForDraw][1]])
+
+        start_index = listForDraw[actualIndexForDraw][0]
+        end_index = listForDraw[actualIndexForDraw][1]
+
+        mmuRam1 = load_data_from_tempfile(request.session['mmuRam1_file'])
+        mmuRam2 = load_data_from_tempfile(request.session['mmuRam2_file'])
+        mmuJson1Data = load_data_from_tempfile(request.session['mmuJson1_file'])
+        mmuJson2Data = load_data_from_tempfile(request.session['mmuJson2_file'])
+
+        ram_result = json.dumps(mmuRam1[start_index:end_index])
+        ram2_result = json.dumps(mmuRam2[start_index:end_index])
+        mmuJsonResult = json.dumps(mmuJson1Data[start_index:end_index])
+        mmuJson2Result = json.dumps(mmuJson2Data[start_index:end_index])
+
+        # del request.session['mmuRam1'][start_index:end_index]
+        # del request.session['mmuRam2'][start_index:end_index]
+        # del request.session['mmuJson1Data'][start_index:end_index]
+        # del request.session['mmuJson2Data'][start_index:end_index]
+
+        print("Iteracion", actualIndexForDraw)
+
+        # request.session.modified = True
+
         actualIndexForDraw += 1
 
         return JsonResponse({
@@ -273,3 +309,35 @@ def dividir_indices_inicio_fin(mi_lista):
         inicio = fin 
 
     return indices_partes
+
+def dividir_indices_inicio_fin_absolutos_simple(longitud_lista, segmentos=10):
+    # Definir el tamaño base del segmento
+    tamaño_segmento = longitud_lista // segmentos
+    # Calcular el sobrante
+    sobrante = longitud_lista % segmentos
+
+    # Inicializar los segmentos con tamaño_base
+    indices_partes = [[0, tamaño_segmento]] * segmentos
+
+    # Ajustar los primeros 'sobrante' segmentos sumándoles 1
+    for i in range(sobrante):
+        indices_partes[i] = [0, tamaño_segmento + 1]
+
+    return indices_partes
+
+def save_data_to_tempfile(data):
+    # Crea un archivo temporal y guarda el contenido JSON
+    with tempfile.NamedTemporaryFile(delete=False, mode='w+', suffix='.json') as temp_file:
+        json.dump(data, temp_file)
+        return temp_file.name  # Retorna la ruta del archivo temporal
+    
+def load_data_from_tempfile(file_path):
+    # Abre el archivo temporal y carga los datos JSON
+    with open(file_path, 'r') as temp_file:
+        return json.load(temp_file)
+
+def delete_tempfile(file_path):
+    try:
+        os.remove(file_path)
+    except OSError:
+        pass  # Manejar el error si el archivo no existe
