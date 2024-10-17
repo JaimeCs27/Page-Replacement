@@ -63,8 +63,6 @@ def simulation(request):
         mmuJsonAux = []
         mmuJsonAux2 = []
 
-        limit = 200
-
         
         
         if uploaded_file:
@@ -79,10 +77,10 @@ def simulation(request):
 
         mmu2 = MMU("OPT", instrucciones.copy())
         mmu = MMU(method, [])
-        
+
+        print("MMU Procesando Información...")
+
         start_time = datetime.now()
-
-
         for instruccion in instrucciones:
             ramAux1 = []
             ramAux2 = []
@@ -165,21 +163,32 @@ def simulation(request):
             mmuJsonAux.append(mmuJson)
             mmuJsonAux2.append(mmuJson2)
 
-        listForDraw = dividir_indices_inicio_fin(mmuResult)
-        indexForDraw = 0 # Indice para la lista de indices
 
         request.session['mmuRam1'] = mmuResult
         request.session['mmuRam2'] = mmuResult2
         request.session['mmuJson1Data'] = mmuJsonAux
         request.session['mmuJson2Data'] = mmuJsonAux2
 
+        if not len(mmuResult) < 10:
+            listForDraw = dividir_indices_inicio_fin(mmuResult)
+            indexForDraw = 0
+            ram_result = json.dumps(mmuResult[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
+            ram2_result = json.dumps(mmuResult2[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
+            mmuJsonResult = json.dumps(mmuJsonAux[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
+            mmuJson2Result = json.dumps(mmuJsonAux2[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
+            indexForDraw += 1
+        else:
+            listForDraw = []
+            indexForDraw = -1
+            ram_result = json.dumps(mmuResult)
+            ram2_result = json.dumps(mmuResult2)
+            mmuJsonResult = json.dumps(mmuJsonAux)
+            mmuJson2Result = json.dumps(mmuJsonAux2)
 
 
-        ram_result = json.dumps(mmuResult[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
-        ram2_result = json.dumps(mmuResult2[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
-        mmuJsonResult = json.dumps(mmuJsonAux[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
-        mmuJson2Result = json.dumps(mmuJsonAux2[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
-        indexForDraw += 1
+        
+
+        
 
         current_time = datetime.now()
 
@@ -192,8 +201,8 @@ def simulation(request):
         # Formatear el tiempo actual como una cadena
         formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
 
-        print("\n\nTermino MMU:", formatted_time)
-        print("Duración del proceso en minutos:", time_difference_in_minutes)
+        print("Terminaron ambas MMU")
+        print("Duración del proceso en minutos: ", time_difference_in_minutes)
 
         
         # Aquí puedes incluir json y json2 en el contexto
@@ -213,10 +222,10 @@ def fetch_next_iterations(request):
     mmuRam2 = request.session.get('mmuRam2', [])
     mmuJson1Data = request.session.get('mmuJson1Data', [])
     mmuJson2Data = request.session.get('mmuJson2Data', [])
+    
     if request.method == 'POST':
-        actualIndexForDraw = int(request.POST.get('indexForDraw', 0))  # Última iteración procesada
-        listForDraw = json.loads(request.POST.get('listForDraw', '[]'))  # Lista de índices de inicio y fin
-        
+        actualIndexForDraw = int(request.POST.get('indexForDraw', 0)) 
+        listForDraw = json.loads(request.POST.get('listForDraw', '[]')) 
         ram_result = json.dumps(mmuRam1[listForDraw[actualIndexForDraw][0]:listForDraw[actualIndexForDraw][1]])
         ram2_result = json.dumps(mmuRam2[listForDraw[actualIndexForDraw][0]:listForDraw[actualIndexForDraw][1]])
         mmuJsonResult = json.dumps(mmuJson1Data[listForDraw[actualIndexForDraw][0]:listForDraw[actualIndexForDraw][1]])
@@ -248,25 +257,19 @@ def generate_file(request):
 
 
 def dividir_indices_inicio_fin(mi_lista):
-    # Obtener la longitud de la lista
     longitud = len(mi_lista)
     
-    # Calcular el tamaño base de cada parte
     tamaño_parte = longitud // 10
-    
-    # Calcular el resto para distribuir entre las primeras partes
+
     resto = longitud % 10
 
-    # Inicializar la lista de resultados con los índices de inicio y fin
     indices_partes = []
     inicio = 0
     
-    # Generar los índices de inicio y fin de cada parte
     for i in range(10):
-        # Si hay un resto, agregar un índice extra a las primeras partes
         tamaño_actual = tamaño_parte + (1 if i < resto else 0)
-        fin = inicio + tamaño_actual  # fin es ahora uno más para que funcione con slice en JS
+        fin = inicio + tamaño_actual  
         indices_partes.append([inicio, fin])
-        inicio = fin  # El siguiente inicio será el mismo valor de fin (no se suma +1)
+        inicio = fin 
 
     return indices_partes

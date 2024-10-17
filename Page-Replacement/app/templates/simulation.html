@@ -162,7 +162,7 @@
 
     <script>
         let currentIndex = 0; // Índice del bloque actual que se está cargando
-        const ramInterval = setInterval(loadNextRamBlock, 10); // 1000 ms = 1 segundo
+        //let ramInterval = setInterval(loadNextRamBlock, 100); // 1000 ms = 1 segundo
         let mmuData2 = JSON.parse('{{ ram2|safe }}');
         let mmuData1 = JSON.parse('{{ ram1|safe }}');
         let mmuJson = JSON.parse('{{ json|safe }}');
@@ -170,28 +170,43 @@
         const method = '{{ algorithm }}';
         let indexForDraw = JSON.parse('{{ indexForDraw|safe }}')
         const listForDraw = JSON.parse('{{ listForDraw|safe }}');
+        let iteracion = 0;
+        let iteracion2 = 0;
+        let stopFlag = false;
+        let stop = false; // Para pausar la simulación
+        startRamSimulation();
 
+        function startRamSimulation() {
+            stopFlag = false;
+            loadNextRamBlock(); // Comienza el ciclo
+        }
+
+        // Detener la simulación
+        function stopRamSimulation() {
+            stopFlag = true;
+        }
         
 
-        function fetchNextBlock() {
+        async function fetchNextBlock() {
             const formData = new FormData();
             formData.append('indexForDraw', indexForDraw);
             formData.append('listForDraw', JSON.stringify(listForDraw));
 
-            fetch('/fetch_next_iterations', {
+            const response = await fetch('/fetch_next_iterations', {
                 method: 'POST',
                 body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                mmuData1 = JSON.parse(data.ram1);
-                mmuData2 = JSON.parse(data.ram2);
-                mmuJson = JSON.parse(data.json);
-                mmuJson2 = JSON.parse(data.json2);
-                indexForDraw = JSON.parse(data.indexForDraw);
-                return data;
-            })
-            .catch(error => console.error('Error fetching next block:', error));
+            });
+
+            const data = await response.json();
+
+
+            mmuData1 = JSON.parse(data.ram1);
+            mmuData2 = JSON.parse(data.ram2);
+            mmuJson = JSON.parse(data.json);
+            mmuJson2 = JSON.parse(data.json2);
+            indexForDraw = JSON.parse(data.indexForDraw);
+            return data;
+
         }
 
         // Función para simular el uso de RAM
@@ -207,7 +222,7 @@
             });
         }
 
-        let stop = false;
+        
 
         function stopSimulation() {
             stop = !stop;
@@ -220,7 +235,9 @@
         }
 
         // Función para cargar el siguiente bloque de RAM
-        function loadNextRamBlock() {
+        
+        async function loadNextRamBlock() {
+            const startTime = Date.now();  // Registra el tiempo de inicio de esta ejecución
             if (currentIndex < mmuData1.length) {
                 simulateRamUsage('ram-bar-1', mmuData1[currentIndex]);
                 simulateRamUsage('ram-bar-2', mmuData2[currentIndex]);
@@ -230,17 +247,36 @@
                 updateMmuTable('mmu-2-body', mmuJson2[currentIndex].mmu);
                 if (!stop){
                     currentIndex += 1;
+                    iteracion++;
                 }
+                
             } else {
-                if(indexForDraw >= 10){
-                    clearInterval(ramInterval);
+                if(indexForDraw === -1 || indexForDraw >= 10){
+                    //clearInterval(ramInterval);
                     console.log("Acabó la simulación")
+                    stopRamSimulation();
+                    return;
                 } else {
-                    fetchNextBlock();
+                    await fetchNextBlock();
                     currentIndex = 0;
+                    simulateRamUsage('ram-bar-1', mmuData1[currentIndex]);
+                    simulateRamUsage('ram-bar-2', mmuData2[currentIndex]);
+                    updateMmuInfo('mmu1', mmuJson[currentIndex]);
+                    updateMmuInfo('mmu2', mmuJson2[currentIndex]);
+                    updateMmuTable('mmu-1-body', mmuJson[currentIndex].mmu);
+                    updateMmuTable('mmu-2-body', mmuJson2[currentIndex].mmu);
+                    if (!stop){
+                        currentIndex += 1;
+                    }
                 }
             }
             
+            const elapsedTime = Date.now() - startTime;
+            const remainingTime = 100 - elapsedTime;
+            if (!stopFlag) {
+                setTimeout(loadNextRamBlock, Math.max(remainingTime, 0));  // Máximo para asegurar que no sea negativo
+            }
+
         }
 
         function updateMmuTable(mmuId, data) {
@@ -266,7 +302,7 @@
             document.getElementById(`${mmuInfoId}-ram-percent`).textContent = info.ramPercentage;
             document.getElementById(`${mmuInfoId}-vram-used`).textContent = info.vramUsage;
             document.getElementById(`${mmuInfoId}-vram-percent`).textContent = info.vramPercentage;
-            if (info.trashingovertime > 60){
+            if (info.trashingovertime > 60){ 
                 document.getElementById(`${mmuInfoId}-trashing`).textContent = info.trashing;
                 document.getElementById(`${mmuInfoId}-trashing`).style.color = 'red'
                 document.getElementById(`${mmuInfoId}-trashing-color`).style.color = 'red'
