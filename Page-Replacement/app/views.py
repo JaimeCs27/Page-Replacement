@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, HttpResponse
+from datetime import datetime
 import json
 from .mmu import MMU
 from .generateFile import generateFile
@@ -62,7 +63,7 @@ def simulation(request):
         mmuJsonAux = []
         mmuJsonAux2 = []
 
-        mmu = MMU(method, [])
+        
         
         if uploaded_file:
             file_data = uploaded_file.read().decode('utf-8')
@@ -72,8 +73,14 @@ def simulation(request):
         else:
             return HttpResponse("No se proporcionó archivo", status=400)
 
-        mmu2 = MMU("FIFO", instrucciones.copy())
-        
+        # instruccionesAux = instrucciones[:limit].copy()
+
+        mmu2 = MMU("OPT", instrucciones.copy())
+        mmu = MMU(method, [])
+
+        print("MMU Procesando Información...")
+
+        start_time = datetime.now()
         for instruccion in instrucciones:
             ramAux1 = []
             ramAux2 = []
@@ -155,11 +162,47 @@ def simulation(request):
             mmuResult2.append(ramAux2)
             mmuJsonAux.append(mmuJson)
             mmuJsonAux2.append(mmuJson2)
-        ram_result = json.dumps(mmuResult)
-        ram2_result = json.dumps(mmuResult2)
-        mmuJsonResult = json.dumps(mmuJsonAux)
-        mmuJson2Result = json.dumps(mmuJsonAux2)
 
+
+        request.session['mmuRam1'] = mmuResult
+        request.session['mmuRam2'] = mmuResult2
+        request.session['mmuJson1Data'] = mmuJsonAux
+        request.session['mmuJson2Data'] = mmuJsonAux2
+
+        if not len(mmuResult) < 10:
+            listForDraw = dividir_indices_inicio_fin(mmuResult)
+            indexForDraw = 0
+            ram_result = json.dumps(mmuResult[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
+            ram2_result = json.dumps(mmuResult2[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
+            mmuJsonResult = json.dumps(mmuJsonAux[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
+            mmuJson2Result = json.dumps(mmuJsonAux2[listForDraw[indexForDraw][0]:listForDraw[indexForDraw][1]])
+            indexForDraw += 1
+        else:
+            listForDraw = []
+            indexForDraw = -1
+            ram_result = json.dumps(mmuResult)
+            ram2_result = json.dumps(mmuResult2)
+            mmuJsonResult = json.dumps(mmuJsonAux)
+            mmuJson2Result = json.dumps(mmuJsonAux2)
+
+
+        
+
+        
+
+        current_time = datetime.now()
+
+        # Calcular la diferencia de tiempo
+        time_difference = current_time - start_time
+
+        # Convertir la diferencia a minutos
+        time_difference_in_minutes = time_difference.total_seconds() / 60
+
+        # Formatear el tiempo actual como una cadena
+        formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+
+        print("Terminaron ambas MMU")
+        print("Duración del proceso en minutos: ", time_difference_in_minutes)
 
         
         # Aquí puedes incluir json y json2 en el contexto
@@ -168,7 +211,33 @@ def simulation(request):
             'ram1': ram_result,
             'ram2': ram2_result,
             'json': mmuJsonResult,    # Añadido
-            'json2': mmuJson2Result   # Añadido
+            'json2': mmuJson2Result,   # Añadido
+            'listForDraw': json.dumps(listForDraw),
+            'indexForDraw': indexForDraw,
+        })
+
+@csrf_exempt
+def fetch_next_iterations(request):
+    mmuRam1 = request.session.get('mmuRam1', [])
+    mmuRam2 = request.session.get('mmuRam2', [])
+    mmuJson1Data = request.session.get('mmuJson1Data', [])
+    mmuJson2Data = request.session.get('mmuJson2Data', [])
+    
+    if request.method == 'POST':
+        actualIndexForDraw = int(request.POST.get('indexForDraw', 0)) 
+        listForDraw = json.loads(request.POST.get('listForDraw', '[]')) 
+        ram_result = json.dumps(mmuRam1[listForDraw[actualIndexForDraw][0]:listForDraw[actualIndexForDraw][1]])
+        ram2_result = json.dumps(mmuRam2[listForDraw[actualIndexForDraw][0]:listForDraw[actualIndexForDraw][1]])
+        mmuJsonResult = json.dumps(mmuJson1Data[listForDraw[actualIndexForDraw][0]:listForDraw[actualIndexForDraw][1]])
+        mmuJson2Result = json.dumps(mmuJson2Data[listForDraw[actualIndexForDraw][0]:listForDraw[actualIndexForDraw][1]])
+        actualIndexForDraw += 1
+
+        return JsonResponse({
+            'ram1': ram_result,
+            'ram2': ram2_result,
+            'json': mmuJsonResult,
+            'json2': mmuJson2Result,
+            'indexForDraw': actualIndexForDraw
         })
 
 
@@ -185,3 +254,22 @@ def generate_file(request):
 
         return JsonResponse(generated_data)
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+def dividir_indices_inicio_fin(mi_lista):
+    longitud = len(mi_lista)
+    
+    tamaño_parte = longitud // 10
+
+    resto = longitud % 10
+
+    indices_partes = []
+    inicio = 0
+    
+    for i in range(10):
+        tamaño_actual = tamaño_parte + (1 if i < resto else 0)
+        fin = inicio + tamaño_actual  
+        indices_partes.append([inicio, fin])
+        inicio = fin 
+
+    return indices_partes

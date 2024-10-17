@@ -17,6 +17,8 @@ class MMU:
         self.clock = 0
         self.method = method
         self.trashing = 0
+        self.recentlyUsed = []
+        self.fifo = []
         for i in range(RAM_SIZE):
             self.ram.append(None)
         if self.method == "FIFO":
@@ -397,4 +399,23 @@ class MMU:
         used_vram = self.vramUsage()  # Uso de VRAM en bytes
         return round((used_vram / total_ram_size) * 100000 if total_ram_size > 0 else 0, 2)  # Calcula el porcentaje
 
+    def __str__(self):
+        ram_str = ", ".join(str(page) if page else "None" for page in self.ram)
+        pages_str = ", ".join(str(page) for page in self.pages)
+        symbol_table_str = ", ".join(f"Pointer {ptr}: [{', '.join(str(page) for page in pages)}]" for ptr, pages in self.symbolTable.items())
 
+        return (f"MMU State:\n"
+                f"Method: {self.method}\n"
+                f"Clock: {self.clock}\n"
+                f"RAM Occupation: {self.ramOcupation}/{RAM_SIZE}\n"
+                f"RAM: [{ram_str}]\n"
+                f"Pages: [{pages_str}]\n"
+                f"Symbol Table: {{ {symbol_table_str} }}\n"
+                f"Trashing: {self.trashing}\n"
+                f"RAM Usage: {self.ramUsage()} KB\n"
+                f"RAM Percentage: {self.ramPercentage()}%\n"
+                f"VRAM Usage: {self.vramUsage()} KB\n"
+                f"VRAM Percentage: {self.vramPercentage()}%\n"
+                f"Total Processes: {self.cantProcess()}\n"
+                f"Fragmentation: {self.getfragmentation()} KB\n"
+                f"Trashing Over Time: {self.trashingovertime()}%\n")

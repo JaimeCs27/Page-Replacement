@@ -161,24 +161,52 @@
     
 
     <script>
-        // Example function to simulate RAM usage
         let currentIndex = 0; // Índice del bloque actual que se está cargando
+        //let ramInterval = setInterval(loadNextRamBlock, 100); // 1000 ms = 1 segundo
+        let mmuData2 = JSON.parse('{{ ram2|safe }}');
+        let mmuData1 = JSON.parse('{{ ram1|safe }}');
+        let mmuJson = JSON.parse('{{ json|safe }}');
+        let mmuJson2 = JSON.parse('{{ json2|safe }}');
+        const method = '{{ algorithm }}';
+        let indexForDraw = JSON.parse('{{ indexForDraw|safe }}')
+        const listForDraw = JSON.parse('{{ listForDraw|safe }}');
+        let iteracion = 0;
+        let iteracion2 = 0;
+        let stopFlag = false;
+        let stop = false; // Para pausar la simulación
+        startRamSimulation();
 
-        function numberToHexColor(randomNumber) {
-            // Normaliza el número aleatorio en un rango de 0 a 16777215 (equivalente a #000000 a #FFFFFF)
-            let scaledNumber = Math.floor((randomNumber / 5000) * 16777215);
+        function startRamSimulation() {
+            stopFlag = false;
+            loadNextRamBlock(); // Comienza el ciclo
+        }
 
-            // Extrae las componentes de color
-            let red = (scaledNumber >> 16) % 256; // Extrae los primeros 8 bits
-            let green = (scaledNumber >> 8) % 256; // Extrae los siguientes 8 bits
-            let blue = scaledNumber % 256; // Extrae los últimos 8 bits
+        // Detener la simulación
+        function stopRamSimulation() {
+            stopFlag = true;
+        }
+        
 
-            // Convierte cada componente a hexadecimal y asegura que tenga 2 dígitos
-            let color = '#' + red.toString(16).padStart(2, '0') +
-                            green.toString(16).padStart(2, '0') +
-                            blue.toString(16).padStart(2, '0');
+        async function fetchNextBlock() {
+            const formData = new FormData();
+            formData.append('indexForDraw', indexForDraw);
+            formData.append('listForDraw', JSON.stringify(listForDraw));
 
-            return color;
+            const response = await fetch('/fetch_next_iterations', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+
+            mmuData1 = JSON.parse(data.ram1);
+            mmuData2 = JSON.parse(data.ram2);
+            mmuJson = JSON.parse(data.json);
+            mmuJson2 = JSON.parse(data.json2);
+            indexForDraw = JSON.parse(data.indexForDraw);
+            return data;
+
         }
 
         // Función para simular el uso de RAM
@@ -194,7 +222,7 @@
             });
         }
 
-        let stop = false;
+        
 
         function stopSimulation() {
             stop = !stop;
@@ -204,12 +232,13 @@
             } else {
                 button.innerHTML = `{% heroicon_outline "pause-circle" %}`;
             }
-    }
+        }
 
         // Función para cargar el siguiente bloque de RAM
-        function loadNextRamBlock() {
+        
+        async function loadNextRamBlock() {
+            const startTime = Date.now();  // Registra el tiempo de inicio de esta ejecución
             if (currentIndex < mmuData1.length) {
-                //ramBlocks1[currentIndex] = 1; // Marcar el bloque como ocupado
                 simulateRamUsage('ram-bar-1', mmuData1[currentIndex]);
                 simulateRamUsage('ram-bar-2', mmuData2[currentIndex]);
                 updateMmuInfo('mmu1', mmuJson[currentIndex]);
@@ -217,28 +246,39 @@
                 updateMmuTable('mmu-1-body', mmuJson[currentIndex].mmu);
                 updateMmuTable('mmu-2-body', mmuJson2[currentIndex].mmu);
                 if (!stop){
-                    currentIndex++; // Incrementar el índice
-
+                    currentIndex += 1;
+                    iteracion++;
                 }
+                
             } else {
-                clearInterval(ramInterval); // Detener el intervalo si se han cargado todos los bloques
-                console.log("se acabo las iteas")
+                if(indexForDraw === -1 || indexForDraw >= 10){
+                    //clearInterval(ramInterval);
+                    console.log("Acabó la simulación")
+                    stopRamSimulation();
+                    return;
+                } else {
+                    await fetchNextBlock();
+                    currentIndex = 0;
+                    simulateRamUsage('ram-bar-1', mmuData1[currentIndex]);
+                    simulateRamUsage('ram-bar-2', mmuData2[currentIndex]);
+                    updateMmuInfo('mmu1', mmuJson[currentIndex]);
+                    updateMmuInfo('mmu2', mmuJson2[currentIndex]);
+                    updateMmuTable('mmu-1-body', mmuJson[currentIndex].mmu);
+                    updateMmuTable('mmu-2-body', mmuJson2[currentIndex].mmu);
+                    if (!stop){
+                        currentIndex += 1;
+                    }
+                }
             }
+            
+            const elapsedTime = Date.now() - startTime;
+            const remainingTime = 100 - elapsedTime;
+            if (!stopFlag) {
+                setTimeout(loadNextRamBlock, Math.max(remainingTime, 0));  // Máximo para asegurar que no sea negativo
+            }
+
         }
 
-        // Iniciar la simulación: cargar un bloque cada segundo
-        const ramInterval = setInterval(loadNextRamBlock, 10); // 1000 ms = 1 segundo
-        const mmuData2 = JSON.parse('{{ ram2|safe }}');
-        const mmuData1 = JSON.parse('{{ ram1|safe }}');
-        // Asegúrate de que json y json2 estén correctamente escapados
-        const mmuJson = JSON.parse('{{ json|safe }}');
-        const mmuJson2 = JSON.parse('{{ json2|safe }}');
-
-        // Ahora puedes usar mmuJson y mmu2Json como objetos de JavaScript
-        //simulateRamUsage('ram-bar-1', ramBlocks1);
-        
-
-        // Example function to update MMU tables
         function updateMmuTable(mmuId, data) {
             const tbody = document.getElementById(mmuId).querySelector('tbody');
             tbody.innerHTML = '';
@@ -255,10 +295,6 @@
             });
         }
 
-        // Example data for MMU tables
-
-
-        // Example function to update MMU info
         function updateMmuInfo(mmuInfoId, info) {
             document.getElementById(`${mmuInfoId}-processes`).textContent = info.cantProcess;
             document.getElementById(`${mmuInfoId}-simulation-time`).textContent = info.clock;
@@ -266,7 +302,7 @@
             document.getElementById(`${mmuInfoId}-ram-percent`).textContent = info.ramPercentage;
             document.getElementById(`${mmuInfoId}-vram-used`).textContent = info.vramUsage;
             document.getElementById(`${mmuInfoId}-vram-percent`).textContent = info.vramPercentage;
-            if (info.trashingovertime > 60){
+            if (info.trashingovertime > 60){ 
                 document.getElementById(`${mmuInfoId}-trashing`).textContent = info.trashing;
                 document.getElementById(`${mmuInfoId}-trashing`).style.color = 'red'
                 document.getElementById(`${mmuInfoId}-trashing-color`).style.color = 'red'
@@ -277,6 +313,23 @@
                 document.getElementById(`${mmuInfoId}-trashing-overtime`).textContent = info.trashingovertime;
             }
             document.getElementById(`${mmuInfoId}-fragmentation`).textContent = info.fragmentation;
+        }
+
+        function numberToHexColor(randomNumber) {
+            // Normaliza el número aleatorio en un rango de 0 a 16777215 (equivalente a #000000 a #FFFFFF)
+            let scaledNumber = Math.floor((randomNumber / 5000) * 16777215);
+
+            // Extrae las componentes de color
+            let red = (scaledNumber >> 16) % 256; // Extrae los primeros 8 bits
+            let green = (scaledNumber >> 8) % 256; // Extrae los siguientes 8 bits
+            let blue = scaledNumber % 256; // Extrae los últimos 8 bits
+
+            // Convierte cada componente a hexadecimal y asegura que tenga 2 dígitos
+            let color = '#' + red.toString(16).padStart(2, '0') +
+                            green.toString(16).padStart(2, '0') +
+                            blue.toString(16).padStart(2, '0');
+
+            return color;
         }
 
     </script>
