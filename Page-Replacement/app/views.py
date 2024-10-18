@@ -245,6 +245,7 @@ def fetch_next_iterations(request):
 def generate_file(request):
     if request.method == 'POST':
         data = json.loads(request.body)
+        print(data)
         seed = data.get('seed')
         processes = data.get('processes')
         operations = data.get('operations')

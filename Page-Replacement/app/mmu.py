@@ -7,8 +7,8 @@ RAM_SIZE = 100
 
 class MMU:
     # Method (algoritmo que se va a usar)
-    def __init__(self, method, instructionSet, seed):
-        random.seed =  seed
+    def __init__(self, method, instructionSet, seed1):
+        random.seed(seed1)
         self.ram = []
         self.pages = []
         self.ramOcupation = 0 # cuadritos de ram ocupados 
@@ -28,8 +28,6 @@ class MMU:
             self.fifo = []
         elif self.method == "MRU":
             self.recentlyUsed = []
-        elif self.method == "RND":
-            random.seed(2)
         self.instSet = instructionSet
         self.fallo = 0
         
@@ -227,7 +225,6 @@ class MMU:
         steps = 0
         actualNext = 0
         inInstructions = False
-        self.printRam()
         for page in self.ram:
             if page == None:
                 continue

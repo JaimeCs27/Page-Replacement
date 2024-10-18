@@ -2,9 +2,12 @@ import random
 import time
 PAGE_SIZE = 4000
 
-def generateFile(seed, processAmount, operationsAmount):
+def generateFile(seed1, processAmount, operationsAmount):
     result = ""
-    random.seed(seed)
+    print(seed1)
+    print(processAmount)
+    print(operationsAmount)
+    random.seed(seed1)
     operationsCounter = 0
     killedPid = []
     data = {}
@@ -41,7 +44,6 @@ def generateFile(seed, processAmount, operationsAmount):
         elif instruction > 3:
             if len(ptrList) > 0:
                 ptr = random.choice(ptrList)
-                print("delete de ptr: " + str(ptr))
                 result += "delete(" + str(ptr) + ")\n"
                 ptrList.remove(ptr)
                 for key in data:
@@ -52,9 +54,7 @@ def generateFile(seed, processAmount, operationsAmount):
             if len(pidList) > 0:
                 pid = random.choice(pidList)
                 for e in data[pid]:
-                    print("eliminando el ptr: " + str(e))
                     ptrList.remove(e)
-                    print(ptrList)
                 del data[pid]
                 result += "kill(" + str(pid) + ")\n"
                 killedPid.append(pid)

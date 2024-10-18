@@ -272,7 +272,7 @@
             }
             
             const elapsedTime = Date.now() - startTime;
-            const remainingTime = 100 - elapsedTime;
+            const remainingTime = 10 - elapsedTime;
             if (!stopFlag) {
                 setTimeout(loadNextRamBlock, Math.max(remainingTime, 0));  // Máximo para asegurar que no sea negativo
             }
