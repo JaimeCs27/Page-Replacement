@@ -44,8 +44,8 @@ def executeInstruction(mmu, mmu2, step):
         mmu.use(step[1])
         mmu2.use(step[1])
     elif instruction == "delete":
-        mmu.delete(step[1])
-        mmu2.delete(step[1])
+        mmu.delete(step[1], False)
+        mmu2.delete(step[1], False)
     else:
         mmu.kill(step[1])
         mmu2.kill(step[1])
@@ -54,6 +54,7 @@ def executeInstruction(mmu, mmu2, step):
 @csrf_exempt
 def simulation(request):
     if request.method == 'POST':
+        seed = request.POST.get('seed')
         generated_file_data = request.POST.get('generatedFile', None)
         uploaded_file = request.FILES.get('file', None)
         method = request.POST.get('algorithm')
@@ -75,8 +76,8 @@ def simulation(request):
 
         # instruccionesAux = instrucciones[:limit].copy()
 
-        mmu2 = MMU("OPT", instrucciones.copy())
-        mmu = MMU(method, [])
+        mmu2 = MMU("OPT", instrucciones.copy(), seed)
+        mmu = MMU(method, [], seed)
 
         print("MMU Procesando Información...")
 
@@ -84,9 +85,8 @@ def simulation(request):
         for instruccion in instrucciones:
             ramAux1 = []
             ramAux2 = []
-
             ram1, ram2 = executeInstruction(mmu, mmu2, instruccion)
-            
+
             for page1 in ram1:
                 ramAux1.append(page1.pid if page1 is not None else 0)
 

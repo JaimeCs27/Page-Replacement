@@ -7,7 +7,8 @@ RAM_SIZE = 100
 
 class MMU:
     # Method (algoritmo que se va a usar)
-    def __init__(self, method, instructionSet): 
+    def __init__(self, method, instructionSet, seed):
+        random.seed =  seed
         self.ram = []
         self.pages = []
         self.ramOcupation = 0 # cuadritos de ram ocupados 
@@ -30,17 +31,17 @@ class MMU:
         elif self.method == "RND":
             random.seed(2)
         self.instSet = instructionSet
+        self.fallo = 0
         
 
     # Funcion para la operacion NEW()
     def new(self, pid, size): 
         pagesNeeded = (size + PAGE_SIZE - 1) // PAGE_SIZE # Calcular cuantas paginas se necesitan
         fragmentation = size - 4000 * (pagesNeeded - 1) # Calcular la fragmentacion 
-
+        if self.method == "OPT" and len(self.instSet) > 0:
+            self.instSet.pop(0)
         pagesList = [] # Almacena las las listas creadas
         recentlyAdded = []
-        if self.method == "OPT":
-            self.instSet.pop(0)
         for i in range(pagesNeeded):
             page = None
             if self.ramOcupation == RAM_SIZE: # ya no hay espacio en memoria fisica
@@ -57,6 +58,7 @@ class MMU:
                     page = self.optimal(pid)
                 self.clock += 5
                 self.trashing += 5
+                self.fallo += 1
             else: # hay espacio disponible en memoria fisica  
                 availableIndex = self.getAvailable() # Obtener el indice mas proximo disponible
                 page = Page(pid, self.pageIDs, availableIndex, False, False, self.ptrCounter, self.clock) # Se crea la pagina
@@ -81,16 +83,16 @@ class MMU:
             self.recentlyUsed.extend(recentlyAdded)
         self.symbolTable[self.ptrCounter] = pagesList
         self.ptrCounter += 1
+        
         return self.ptrCounter - 1
 
     # debe garantizar que las paginas esten en memoria
     def use(self, ptr):
         # sacar la lista de paginas del ptr
         pages = self.symbolTable[ptr]
-
-        recentlyAdded = []
-        if self.method == "OPT":
+        if self.method == "OPT" and len(self.instSet) > 0:
             self.instSet.pop(0)
+        recentlyAdded = []
         for page in pages:
             # estan en memoria virtual?
             if page.isVirtual:
@@ -106,7 +108,7 @@ class MMU:
                     self.optimalUse(page)
                 self.clock += 5
                 self.trashing += 5
-                pass
+                self.fallo += 1
             else:
                 if self.method == "MRU":
                     self.recentlyUsed.remove(page.direction)
@@ -116,19 +118,24 @@ class MMU:
                 self.clock += 1
         if self.method == "MRU":
             self.recentlyUsed.extend(recentlyAdded)
+        
 
     def kill(self, pid):
         # Encontrar todos los punteros asociados al pid
         ptrs_to_delete = [ptr for ptr, pages in self.symbolTable.items() if any(page.pid == pid for page in pages)]
-        
+        if self.method == "OPT" and len(self.instSet) > 0:
+            self.instSet.pop(0)
         # Eliminar cada puntero encontrado
         for ptr in ptrs_to_delete:
-            self.delete(ptr)
+            self.delete(ptr, True)
+        
 
-    def delete(self, ptr):
+    def delete(self, ptr, kill):
+        
         # obtener las paginas asociadas a ese ptr
         pages = self.symbolTable[ptr]
-       
+        if self.method == "OPT" and len(self.instSet) > 0 and not kill:
+            self.instSet.pop(0)
         # eliminar de la ram las paginas asociadas
         for page in pages:
             if not page.isVirtual:
@@ -148,7 +155,9 @@ class MMU:
             else:
                 self.clock += 5 # tambien es duda
                 self.trashing += 5
+                self.fallo += 1
         # eliminar de la lista de paginas 
+        
         for page in pages:
             if page in self.pages:
                 self.pages.remove(page)
@@ -187,7 +196,7 @@ class MMU:
         steps = 0
         actualNext = 0
         inInstructions = False
-        for page in self.ram:
+        for page in self.ram:  
             if self.ptrCounter == page.pointer:
                 continue
             actualStep = 0
@@ -203,9 +212,9 @@ class MMU:
                     break
                 else:
                     inInstructions = False
-                    actualNext = page.direction
             if not inInstructions:
-                break        
+                actualNext = page.direction
+                break      
         oldPage = self.ram[actualNext]
         oldPage.isVirtual = True
         oldPage.direction = None
@@ -217,8 +226,12 @@ class MMU:
     def optimalUse(self, newPage):
         steps = 0
         actualNext = 0
+        inInstructions = False
+        self.printRam()
         for page in self.ram:
-            if page == None or newPage.pointer == page.pointer:
+            if page == None:
+                continue
+            if newPage.pointer == page.pointer:
                 continue
             actualStep = 0
             for set in self.instSet:
@@ -233,8 +246,8 @@ class MMU:
                     break
                 else:
                     inInstructions = False
-                    actualNext = page.direction
             if not inInstructions:
+                actualNext = page.direction
                 break
         oldPage = self.ram[actualNext]
         oldPage.isVirtual = True
@@ -342,8 +355,14 @@ class MMU:
 
 
     def printRam(self):
+        result = " ["
         for page in self.ram:
-            print(page)
+            if page == None:
+                result += "None, "
+            else:
+                result += str(page.pointer) + " " + str(page.id) + ", "
+        result += "]"
+        print(result)
 
     def printPages(self):
         for page in self.pages:
