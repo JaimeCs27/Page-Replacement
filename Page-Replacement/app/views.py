@@ -274,3 +274,19 @@ def dividir_indices_inicio_fin(mi_lista):
         inicio = fin 
 
     return indices_partes
+
+def dividir_indices_inicio_fin_absolutos_simple(longitud_lista, segmentos=10):
+    # Definir el tamaño base del segmento
+    tamaño_segmento = longitud_lista // segmentos
+    # Calcular el sobrante
+    sobrante = longitud_lista % segmentos
+
+    # Inicializar los segmentos con tamaño_base
+    indices_partes = [[0, tamaño_segmento]] * segmentos
+
+    # Ajustar los primeros 'sobrante' segmentos sumándoles 1
+    for i in range(sobrante):
+        indices_partes[i] = [0, tamaño_segmento + 1]
+
+    return indices_partes
+
